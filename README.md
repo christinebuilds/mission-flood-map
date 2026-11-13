@@ -13,6 +13,7 @@ This is not an official city service or a warning system. In an emergency call 9
 - Recent flooding, drain and sewage-backup cases reported to SF311 (DataSF, refreshed nightly).
 - City storm drains, with a rule-of-thumb flag for the ones to check first.
 - Neighbor reports: "water here", "I cleared this drain", "needs clearing", with optional photos.
+- Wildlife neighbors photographed in the last 30 days (iNaturalist), with photos, and the city's street trees with California natives marked (DataSF). Zoom in to see them.
 - Weather alerts and rain chance (National Weather Service), next high tide (NOAA), and rain radar.
 
 ## Help improve it
