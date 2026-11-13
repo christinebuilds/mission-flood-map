@@ -95,9 +95,10 @@ button.act.alt { background: #fff; color: var(--ink); }
 #cheer .big { font-size: 44px; line-height: 1; }
 #cheer h2 { font-size: 22px; margin: 8px 0 6px; }
 #cheer p { margin: 0 0 10px; font-size: 15px; }
-#cheer i { position: absolute; top: -12px; width: 9px; height: 14px; border-radius: 2px; opacity: 0; }
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3100; pointer-events: none; }
+.thx { background: linear-gradient(90deg,#fff3c4,#ffd9ec,#d6f3ff) !important; border-color: #d81b60 !important; color: #16252d !important; font-weight: 700; }
+.thx[disabled] { opacity: .8; }
 @media (prefers-reduced-motion: no-preference) {
-  #cheer:not([hidden]) i { animation: drop 2.2s ease-in forwards; }
   #cheer:not([hidden]) .big { animation: pop .5s cubic-bezier(.2,1.6,.4,1) both; }
 }
 @keyframes drop { 0% { opacity: 1; transform: translateY(0) rotate(0); } 100% { opacity: 0; transform: translateY(105vh) rotate(540deg); } }
@@ -136,9 +137,10 @@ button.linkish { background: none; border: 0; padding: 0; font: inherit; color: 
 <div id="stat"><div class="msg" id="n311"></div><div class="msg" id="nDrain"></div><div class="msg" id="nRep"></div><div class="msg" id="tileMsg"></div></div>
 <div id="mapMsg" role="status" hidden></div>
 <div id="pickMsg" hidden>Tap the map where the water is</div>
+<canvas id="confetti" hidden aria-hidden="true"></canvas>
 <div id="cheer" hidden role="dialog" aria-labelledby="cheerT">
   <div class="box">
-    <div class="big" aria-hidden="true">💧</div>
+    <div class="big" aria-hidden="true">🎉</div>
     <h2 id="cheerT">Thank you!</h2>
     <p id="cheerA"></p>
     <p class="small" id="cheerB"></p>
@@ -264,7 +266,8 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
   sites.forEach(function (s) {
     var hot = s.tier === "repeat";
     var col = hot ? "#c0392b" : "#e08a1e";
-    var style = { color: col, weight: 2.5, dashArray: "7 6", fillColor: col, fillOpacity: 0.3 };
+    // Drawn on the same canvas as the drains, underneath them, so a drain on a flooded street still takes the tap.
+    var style = { renderer: canvas, color: col, weight: 2.5, dashArray: "7 6", fillColor: col, fillOpacity: 0.3 };
     var g = L.featureGroup();
     s.shapes.forEach(function (sh) {
       if (sh.type === "circle") {
@@ -436,7 +439,7 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
   function deviceId() { var id = store("fm_device"); if (!/^[a-f0-9-]{36}$/.test(id || "")) { id = uuid(); store("fm_device", id); } return id; }
   function thanksButton(r) {
     var mine = (store("fm_thanked") || []).indexOf(r.id) >= 0, n = thanksCount[r.id] || 0;
-    return '<button type="button" class="thx" data-thx="' + esc(r.id) + '"' + (mine ? " disabled" : "") + ">" + (mine ? "You thanked this neighbor" : "Say thanks to the neighbor who cleared it") + (n ? " · " + n : "") + "</button>";
+    return '<button type="button" class="thx" data-thx="' + esc(r.id) + '"' + (mine ? " disabled" : "") + ">" + (mine ? "🎉 You thanked this neighbor" : "🎉 Say thanks to the neighbor who cleared it") + (n ? " · " + n : "") + "</button>";
   }
   function wireThanks(el) {
     Array.prototype.forEach.call(el.querySelectorAll("[data-thx]"), function (b) {
@@ -447,7 +450,8 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
             if (!r.ok && r.status !== 409) throw new Error("HTTP " + r.status);
             var t = store("fm_thanked") || []; if (t.indexOf(id) < 0) t.push(id); store("fm_thanked", t.slice(-500));
             if (r.ok) thanksCount[id] = (thanksCount[id] || 0) + 1;
-            b.textContent = "Thanks sent · " + (thanksCount[id] || 1);
+            b.textContent = "🎉 Thanks sent · " + (thanksCount[id] || 1);
+            var q = b.getBoundingClientRect(); confetti(q.left + q.width / 2, q.top, 70);
           }).catch(function () { b.disabled = false; b.textContent = "Could not send thanks. Tap to try again."; });
       });
     });
@@ -664,15 +668,40 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
       return sb("/functions/v1/moderate", { method: "POST" }).catch(function () {}).then(loadReports);
     }).catch(function (err) { go.disabled = false; rfMsg.textContent = "Could not post: " + err.message; });
   });
+  // Confetti drawn on one canvas above everything. With "reduce motion" on, it is a still scatter instead of falling.
+  function confetti(x, y, n) {
+    var c = document.getElementById("confetti"), dpr = window.devicePixelRatio || 1, W = window.innerWidth, H = window.innerHeight;
+    c.width = W * dpr; c.height = H * dpr; c.hidden = false;
+    var g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var cols = ["#ff3d7f", "#ffb300", "#00bcd4", "#7c4dff", "#2e7d32", "#ff7043", "#1565c0"], ps = [];
+    for (var i = 0; i < n; i++) { var a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4, v = 5 + Math.random() * 9;
+      ps.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 3, w: 6 + Math.random() * 7, h: 9 + Math.random() * 8, r: Math.random() * 6.3, vr: (Math.random() - 0.5) * 0.4, col: cols[i % cols.length], round: i % 4 === 0 }); }
+    function draw(still) {
+      g.clearRect(0, 0, W, H);
+      ps.forEach(function (p) { g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.fillStyle = p.col;
+        if (p.round) { g.beginPath(); g.arc(0, 0, p.w / 2, 0, 7); g.fill(); } else g.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * (still ? 1 : Math.abs(Math.cos(p.r * 2)) * 0.8 + 0.2)); g.restore(); });
+    }
+    clearTimeout(confetti.t);
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      ps.forEach(function (p) { p.x = Math.random() * W; p.y = Math.random() * H * 0.6; }); draw(true);
+      confetti.t = setTimeout(function () { c.hidden = true; }, 2500); return;
+    }
+    var t0 = Date.now(), run = confetti.run = {};
+    (function step() {
+      if (confetti.run !== run) return;
+      ps.forEach(function (p) { p.vy += 0.28; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr; });
+      draw(false);
+      if (Date.now() - t0 < 3200) requestAnimationFrame(step); else c.hidden = true;
+    })();
+  }
   function cheer() {
     var mine = (store("fm_cleared") || 0) + 1; store("fm_cleared", mine);
     var month = reports.filter(function (r) { return r.kind === "cleared" && Date.now() - new Date(r.created_at).getTime() < 30 * 864e5; }).length + 1;
     document.getElementById("cheerA").textContent = "You cleared a drain. Water on your block now has somewhere to go.";
     document.getElementById("cheerB").textContent = (mine > 1 ? "That's " + mine + " drains you've cleared. " : "") + "Neighbors have logged " + month + (month === 1 ? " clearing" : " clearings") + " on this map in the last 30 days, and they can thank you from the drain's dot.";
-    var box = document.getElementById("cheer"), cols = ["#00bcd4", "#1565c0", "#2e7d32", "#f9a825", "#d81b60"];
-    Array.prototype.forEach.call(box.querySelectorAll("i"), function (x) { x.remove(); });
-    for (var i = 0; i < 28; i++) { var c = document.createElement("i"); c.style.left = (Math.random() * 100) + "%"; c.style.background = cols[i % cols.length]; c.style.animationDelay = (Math.random() * 0.6) + "s"; box.appendChild(c); }
+    var box = document.getElementById("cheer");
     box.hidden = false; document.getElementById("cheerDone").focus();
+    confetti(window.innerWidth / 2, window.innerHeight * 0.55, 140);
   }
   document.getElementById("cheerDone").addEventListener("click", function () { document.getElementById("cheer").hidden = true; });
 
