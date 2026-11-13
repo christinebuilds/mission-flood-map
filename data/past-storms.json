@@ -1,0 +1,427 @@
+{
+  "note": "Places that news reports say flooded in past storms. See CONTRIBUTING.md before editing.",
+  "areas": [
+    {
+      "name": "17th & Folsom",
+      "tier": "repeat",
+      "about": "Where Mission Creek used to flow. NBC Bay Area calls it the lowest point in San Francisco.",
+      "shapes": [
+        {
+          "type": "circle",
+          "center": [
+            37.7633,
+            -122.4147
+          ],
+          "radius_m": 130
+        },
+        {
+          "type": "line",
+          "points": [
+            [
+              37.7633,
+              -122.4147
+            ],
+            [
+              37.7635,
+              -122.4129
+            ]
+          ],
+          "width_m": 36
+        }
+      ],
+      "events": [
+        {
+          "when": "Dec 31, 2022 (5.46 in)",
+          "text": "Residents and businesses around this long-standing flood zone were still recovering days later.",
+          "src": "Mission Local",
+          "url": "https://missionlocal.org/?p=515430"
+        },
+        {
+          "when": "Oct 2021",
+          "text": "Relatively little damage after the city and neighbors set out sandbags and barricades.",
+          "src": "Mission Local",
+          "url": "https://missionlocal.org/2021/10/equipped-with-sandbags-and-barricades-weekends-flood-threats-dont-hold-water/"
+        },
+        {
+          "when": "Date not shown",
+          "text": "A surge of floodwater came out of the sewers around 2:45 pm. Homes and businesses flooded, and Folsom St reopened at 10 pm.",
+          "src": "ABC7 archive",
+          "url": "https://abc7news.com/archive/7072716/"
+        },
+        {
+          "when": "Date not shown",
+          "text": "A city water official called it a hot spot for flooding when flood barriers went up here.",
+          "src": "NBC Bay Area",
+          "url": "https://www.nbcbayarea.com/news/local/sf-neighborhood-braces-for-rain-possible-flooding/144186/?amp=1"
+        },
+        {
+          "when": "Date not shown",
+          "text": "Merchants blamed the city after significant flooding at this intersection.",
+          "src": "NBC Bay Area",
+          "url": "https://www.nbcbayarea.com/news/local/flooding-at-citys-lowest-point-in-mission-district/76034/"
+        }
+      ]
+    },
+    {
+      "name": "14th St, Folsom to Harrison (Rintaro block)",
+      "tier": "repeat",
+      "about": "The old Mission Creek area. A restaurant newsletter calls 14th and Folsom a notorious area for flooding.",
+      "shapes": [
+        {
+          "type": "line",
+          "points": [
+            [
+              37.769,
+              -122.4149
+            ],
+            [
+              37.7692,
+              -122.4126
+            ]
+          ],
+          "width_m": 44
+        }
+      ],
+      "events": [
+        {
+          "when": "Dec 31, 2022 (5.46 in)",
+          "text": "Water on 14th St reached about 12 inches within 45 minutes. Rintaro took in two to four feet of water, depending on the report, and took 45 days to reopen.",
+          "src": "CBS News",
+          "url": "https://cbsnews.com/sanfrancisco/news/bay-area-business-and-home-owners-faced-with-insurance-questions-about-flood-damage"
+        },
+        {
+          "when": "Dec 31, 2022",
+          "text": "Pink Onion was flooded and its equipment destroyed. Rainbow Grocery on Folsom closed for flooding.",
+          "src": "ABC7",
+          "url": "https://abc7news.com/amp/post/san-francisco-flooding-rain-flood-damage-atmospheric-river/12638884/"
+        },
+        {
+          "when": "Date not shown",
+          "text": "A reporter found Harrison and 14th flooded on a morning commute during a heavy downpour.",
+          "src": "KQED",
+          "url": "https://kqed.org/news/10375351/bay-area-storm-flooding-some-san-francisco-intersections-slowing-traffic-threatening-businesses"
+        },
+        {
+          "when": "Later",
+          "text": "SFPUC planned to upgrade the sewer pipes on this stretch of 14th St.",
+          "src": "CBS News",
+          "url": "https://www.cbsnews.com/amp/sanfrancisco/news/san-francisco-business-wary-of-another-wet-winter-flooding-prepares-for-worst-case-scenario"
+        }
+      ]
+    },
+    {
+      "name": "Folsom St, 14th to 18th",
+      "tier": "reported",
+      "about": "The low corridor between the two worst blocks.",
+      "shapes": [
+        {
+          "type": "line",
+          "points": [
+            [
+              37.769,
+              -122.4149
+            ],
+            [
+              37.7633,
+              -122.4147
+            ],
+            [
+              37.7617,
+              -122.4144
+            ]
+          ],
+          "width_m": 30
+        }
+      ],
+      "events": [
+        {
+          "when": "Dec 31, 2022 (5.46 in)",
+          "text": "Footage showed Folsom Street resembling a river.",
+          "src": "SF Standard",
+          "url": "https://sfstandard.com/2023/01/03/where-was-the-city-sf-braces-for-another-devastating-storm/"
+        },
+        {
+          "when": "Dec 31, 2022",
+          "text": "El Tepa Taqueria at 18th and Folsom was still closed months later.",
+          "src": "SF Standard",
+          "url": "https://sfstandard.com/arts-culture/this-women-owned-sf-bars-parklet-floated-away-in-a-rainstorm-now-its-closed/"
+        },
+        {
+          "when": "Date not shown",
+          "text": "Drains backed up and flooded Stable Cafe with water and raw sewage. KPIX notes the area was built on a lagoon and Mission Creek, so rain flowing downhill pools here.",
+          "src": "CBS News (KPIX)",
+          "url": "https://cbsnews.com/sanfrancisco/news/san-francisco-preps-storm-drains-in-anticipation-of-flooding-in-soma-neighborhood"
+        }
+      ]
+    },
+    {
+      "name": "Cesar Chavez St at US-101",
+      "tier": "repeat",
+      "about": "A low underpass. Four separate news reports describe stranded cars here.",
+      "shapes": [
+        {
+          "type": "line",
+          "points": [
+            [
+              37.7483,
+              -122.4082
+            ],
+            [
+              37.7479,
+              -122.403
+            ]
+          ],
+          "width_m": 46
+        }
+      ],
+      "events": [
+        {
+          "when": "Dec 31, 2022 (5.46 in)",
+          "text": "Some drivers ignored the closure on Cesar Chavez. One had to be rescued by firefighters after his car floated.",
+          "src": "KTVU",
+          "url": "https://www.ktvu.com/news/san-francisco-sees-mudslides-flooded-homes"
+        },
+        {
+          "when": "Dec 3, 2014",
+          "text": "Crews worked to remove multiple cars trapped in deep water near Cesar Chavez.",
+          "src": "The Bold Italic",
+          "url": "https://www.thebolditalic.com/storm-porn-photos-of-last-night-s-epic-storm-the-bold-italic-san-francisco/"
+        },
+        {
+          "when": "Date not shown",
+          "text": "Overnight rain swallowed three cars under US-101 at the Cesar Chavez exit.",
+          "src": "CBS News",
+          "url": "https://www.cbsnews.com/sanfrancisco/tag/storm/36"
+        },
+        {
+          "when": "Date not shown",
+          "text": "High water at Cesar Chavez and 101 during a sudden downpour. The 6th St on-ramp to 280 also closed.",
+          "src": "ABC7 archive",
+          "url": "https://abc7news.com/archive/7072716/"
+        }
+      ]
+    },
+    {
+      "name": "Wawona St & 15th Ave (West Portal)",
+      "tier": "repeat",
+      "about": "A low point where downpours collect. The SFPUC said the storm drain system here was not big enough.",
+      "shapes": [
+        {
+          "type": "circle",
+          "center": [
+            37.7372,
+            -122.4716
+          ],
+          "radius_m": 110
+        }
+      ],
+      "events": [
+        {
+          "when": "Dec 2019",
+          "text": "Homes flooded when a heavy downpour had nowhere to go at Wawona St and 15th Ave. One resident reported a foot of water in a bedroom.",
+          "src": "ABC7",
+          "url": "https://abc7news.com/society/sf-neighborhood-facing-the-aftermath-of-heavy-weekend-rain-/5742985/"
+        }
+      ]
+    },
+    {
+      "name": "Toland St & Galvez Ave (Bayview)",
+      "tier": "reported",
+      "about": "Industrial low ground near Islais Creek.",
+      "shapes": [
+        {
+          "type": "circle",
+          "center": [
+            37.7437,
+            -122.3987
+          ],
+          "radius_m": 110
+        }
+      ],
+      "events": [
+        {
+          "when": "Jan 2023",
+          "text": "Flooding stranded a car and stopped several Muni buses.",
+          "src": "SF Standard",
+          "url": "https://sfstandard.com/2023/01/03/where-was-the-city-sf-braces-for-another-devastating-storm/"
+        }
+      ]
+    },
+    {
+      "name": "Le Conte Ave (Bayview)",
+      "tier": "reported",
+      "about": "Homes below a hillside. Location is approximate.",
+      "shapes": [
+        {
+          "type": "circle",
+          "center": [
+            37.719,
+            -122.399
+          ],
+          "radius_m": 130
+        }
+      ],
+      "events": [
+        {
+          "when": "Dec 31, 2022 (5.46 in)",
+          "text": "Several homes were damaged and red-tagged after hillside runoff flooded yards and patios.",
+          "src": "KTVU",
+          "url": "https://www.ktvu.com/news/san-francisco-sees-mudslides-flooded-homes"
+        }
+      ]
+    },
+    {
+      "name": "Marina Blvd (Marina)",
+      "tier": "reported",
+      "about": "Waterfront boulevard. The exact stretch is not given in the report.",
+      "shapes": [
+        {
+          "type": "line",
+          "points": [
+            [
+              37.8062,
+              -122.444
+            ],
+            [
+              37.8066,
+              -122.437
+            ]
+          ],
+          "width_m": 40
+        }
+      ],
+      "events": [
+        {
+          "when": "Oct 2021",
+          "text": "Marina Boulevard flooded during heavy rain, prompting a supervisor to write to the PUC and Public Works.",
+          "src": "SF Chronicle",
+          "url": "https://preview-prod.w.sfchronicle.com/sf/article/storm-damage-weather-cost-17726925.php"
+        }
+      ]
+    },
+    {
+      "name": "I-280 Monterey Blvd exit (Glen Park)",
+      "tier": "reported",
+      "about": "Freeway off-ramp. Location is approximate.",
+      "shapes": [
+        {
+          "type": "circle",
+          "center": [
+            37.7313,
+            -122.437
+          ],
+          "radius_m": 110
+        }
+      ],
+      "events": [
+        {
+          "when": "Jan 1, 2023",
+          "text": "Cars tried to drive through the flooded Monterey exit off I-280.",
+          "src": "SF Chronicle",
+          "url": "https://preview-prod.w.sfchronicle.com/sf/article/storm-damage-weather-cost-17726925.php"
+        }
+      ]
+    },
+    {
+      "name": "Division St and Henry Adams St (Design District)",
+      "tier": "reported",
+      "about": "Low ground near I-80, between Potrero Hill and the Mission.",
+      "shapes": [
+        {
+          "type": "line",
+          "points": [
+            [
+              37.7688,
+              -122.4075
+            ],
+            [
+              37.7697,
+              -122.404
+            ]
+          ],
+          "width_m": 34
+        }
+      ],
+      "events": [
+        {
+          "when": "Date not shown (flash flood warning day)",
+          "text": "Video showed cars driving through flooded streets here during an atmospheric river.",
+          "src": "KTVU",
+          "url": "https://www.ktvu.com/news/video-atmospheric-river-floods-roads-around-san-francisco.amp"
+        }
+      ]
+    },
+    {
+      "name": "Market St at Church St",
+      "tier": "reported",
+      "about": "On the Mission's uphill edge, not in the creek bed.",
+      "shapes": [
+        {
+          "type": "line",
+          "points": [
+            [
+              37.7678,
+              -122.4312
+            ],
+            [
+              37.7667,
+              -122.4268
+            ]
+          ],
+          "width_m": 34
+        }
+      ],
+      "events": [
+        {
+          "when": "Dec 2019",
+          "text": "Drivers hesitated at what social media called \"Lake Market Street.\"",
+          "src": "ABC7",
+          "url": "https://abc7news.com/weather/san-francisco-streets-flooded-during-heavy-rainstorm/5742118/"
+        }
+      ]
+    },
+    {
+      "name": "23rd St and Dolores St",
+      "tier": "reported",
+      "about": "Southern Mission.",
+      "shapes": [
+        {
+          "type": "line",
+          "points": [
+            [
+              37.754,
+              -122.4278
+            ],
+            [
+              37.7538,
+              -122.424
+            ]
+          ],
+          "width_m": 30
+        },
+        {
+          "type": "line",
+          "points": [
+            [
+              37.7552,
+              -122.426
+            ],
+            [
+              37.7526,
+              -122.4258
+            ]
+          ],
+          "width_m": 30
+        }
+      ],
+      "events": [
+        {
+          "when": "Date not shown",
+          "text": "Video showed flooded sidewalks here during an atmospheric river.",
+          "src": "KTVU",
+          "url": "https://www.ktvu.com/news/video-atmospheric-river-floods-roads-around-san-francisco.amp"
+        }
+      ]
+    }
+  ]
+}

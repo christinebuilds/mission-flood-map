@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SF neighborhood flood map</title>
+<link rel="stylesheet" href="vendor/leaflet.css">
+<style>
+:root { --bg:#f4f6f7; --ink:#16252d; --muted:#53686f; --line:#d3dde1; --card:#fff; --hot:#c0392b; --one:#e08a1e; --c311:#1565c0; --link:#1d6a9f; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { padding: 14px 16px 8px; max-width: 900px; margin: 0 auto; }
+h1 { font-size: 22px; line-height: 1.2; margin: 0 0 4px; }
+header p { margin: 0; color: var(--muted); font-size: 14px; }
+#bar { max-width: 900px; margin: 0 auto; padding: 4px 16px 10px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 14px; }
+#bar label { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; cursor: pointer; }
+#bar input[type=checkbox] { width: 20px; height: 20px; }
+#bar select { font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); }
+.sw { display: inline-block; width: 18px; height: 11px; border-radius: 2px; border: 2px dashed var(--hot); background: rgba(192,57,43,.3); }
+.dt { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--c311); border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+#map { height: 62vh; min-height: 400px; width: 100%; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.msg { max-width: 900px; margin: 0 auto; padding: 6px 16px 0; font-size: 13px; color: var(--muted); }
+main { max-width: 900px; margin: 0 auto; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 16px; }
+h2 { font-size: 18px; margin: 0 0 6px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.card li { font-size: 15px; margin-bottom: 4px; }
+.card ul { margin: 6px 0 0; padding-left: 20px; }
+details { background: var(--card); border: 1px solid var(--line); border-left: 5px dashed var(--one); border-radius: 8px; padding: 10px 14px; }
+details.hot { border-left-color: var(--hot); }
+summary { cursor: pointer; font-weight: 600; }
+summary small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+details ul { margin: 8px 0 0; padding-left: 18px; font-size: 14px; }
+details li { margin-bottom: 6px; }
+a { color: var(--link); }
+.when { font-weight: 600; }
+.legend { background: rgba(255,255,255,.96); color: #16252d; padding: 8px 10px; border-radius: 6px; font-size: 12px; line-height: 1.8; box-shadow: 0 1px 4px rgba(0,0,0,.3); max-width: 230px; }
+.legend b { display: block; }
+.legend details { background: none; border: 0; padding: 0; border-radius: 0; }
+.legend summary { font-size: 13px; }
+.lsw { display: inline-block; width: 16px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px; border: 2px dashed; }
+.ldot { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 50%; vertical-align: -2px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+.leaflet-popup-content { font-size: 13px; line-height: 1.45; max-width: 260px; }
+.leaflet-popup-content ul { margin: 6px 0 0; padding-left: 16px; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 1px 7px; border-radius: 99px; margin-bottom: 4px; }
+.tag.past { background: #fbe3df; color: #8e2a1f; }
+.tag.now { background: #dbe9f8; color: #0d47a1; }
+.small { font-size: 13px; color: var(--muted); }
+#live { max-width: 900px; margin: 0 auto; padding: 0 16px 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 13px; background: #fff; border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; }
+.chip.alert { background: #fdecea; border-color: #c0392b; color: #8e2a1f; font-weight: 600; }
+.ddot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 2px solid #222; }
+#sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2000; background: #fff; border-top: 2px solid var(--ink); padding: 14px 16px 18px; box-shadow: 0 -4px 16px rgba(0,0,0,.25); max-height: 80vh; overflow: auto; }
+#sheet form { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+#sheet label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
+#sheet input[type=text] { font-size: 16px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; }
+#sheet .row { display: flex; gap: 10px; }
+button.act { font-size: 15px; font-weight: 600; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
+button.act.alt { background: #fff; color: var(--ink); }
+.pbtns { display: flex; gap: 6px; margin: 8px 0 4px; flex-wrap: wrap; }
+.pbtns button { font-size: 13px; font-weight: 600; padding: 7px 10px; border-radius: 6px; border: 1px solid #16252d; background: #16252d; color: #fff; cursor: pointer; }
+.pbtns button.alt { background: #fff; color: #16252d; }
+.pimg { display: block; max-width: 100%; border-radius: 6px; margin-top: 6px; }
+.nimg { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 6px; margin: 6px 0 4px; background: #e8eef0; }
+.ncredit { font-size: 11px; color: #53686f; }
+.nabout { margin: 6px 0 0; }
+.tag.nat { background: #e3f1e6; color: #1e5a31; }
+#pickMsg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2000; background: #16252d; color: #fff; padding: 8px 14px; border-radius: 99px; font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SF neighborhood flood map</h1>
+  <p>A volunteer-made map for San Francisco storms. It is not an official city service. Purple is the <b>city's modeled flood zone</b>, dashed areas <b>flooded in past storms</b> per news reports, and dots are <b>recent reports</b>. Zoom in to see <b>wildlife neighbors have photographed</b> and <b>street trees</b>. Tap anything for details. In an emergency call 9-1-1.</p>
+</header>
+<div id="bar">
+  <label><input type="checkbox" id="tZone" checked><span class="sw" style="border:2px solid #5e35b1;background:rgba(94,53,177,.2)"></span>City flood zone</label>
+  <label><input type="checkbox" id="tHist" checked><span class="sw"></span>Past storms (news)</label>
+  <label><input type="checkbox" id="t311" checked><span class="dt"></span>311 reports</label>
+  <label><input type="checkbox" id="tDrain" checked><span class="ddot" style="background:#d81b60"></span>Storm drains</label>
+  <label><input type="checkbox" id="tRep" checked><span class="ddot" style="background:#00bcd4"></span>Neighbor reports</label>
+  <label><input type="checkbox" id="tWild" checked><span class="ddot" style="background:#d0581c;border-color:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.4)"></span>Wildlife seen</label>
+  <label><input type="checkbox" id="tTree" checked><span class="ddot" style="background:#2f8a4a;border-color:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.4)"></span>Street trees</label>
+  <label><input type="checkbox" id="tRadar">Rain radar</label>
+  <label>311: last <select id="days"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></label>
+</div>
+<div id="live"><span class="chip" id="cAlert">Weather alerts: loading…</span><span class="chip" id="cRain">Rain chance: loading…</span><span class="chip" id="cTide">Tide: loading…</span></div>
+<div id="map" role="application" aria-label="Map of flood risk and reports in San Francisco"></div>
+<div class="msg" id="n311"></div>
+<div class="msg" id="nDrain"></div>
+<div class="msg" id="nRep"></div>
+<div class="msg" id="nNature"></div>
+<div class="msg" id="tileMsg"></div>
+<div id="pickMsg" hidden>Tap the map where the water is</div>
+<div id="sheet" hidden>
+  <form id="rf">
+    <h2 id="rfTitle" style="margin:0">Report</h2>
+    <p class="small" id="rfWhere" style="margin:0"></p>
+    <label for="rfNote">Note (optional)<input type="text" id="rfNote" maxlength="280" placeholder="e.g. leaves blocking the grate"></label>
+    <label for="rfPhoto">Photo (optional)<input type="file" id="rfPhoto" accept="image/*"></label>
+    <p class="small" style="margin:0">Posts are anonymous. Notes and photos are checked automatically before they appear publicly; photos with faces or license plates are not shown. For danger to life call 9-1-1. This does not notify the city; use SF311 for that.</p>
+    <div class="row"><button class="act" type="submit" id="rfGo">Post</button><button class="act alt" type="button" id="rfCancel">Cancel</button></div>
+    <p class="small" id="rfMsg" style="margin:0"></p>
+  </form>
+</div>
+
+<main>
+  <section class="card">
+    <h2>What each layer means</h2>
+    <ul>
+      <li><b>City flood zone (purple):</b> the SFPUC's official 100-year storm flood risk zone, from DataSF. It models a very rare storm and covers storm runoff only, not bay or ocean flooding. Use it to see which blocks sit low.</li>
+      <li><b>Past storms (dashed shading):</b> intersections and streets that news reports say flooded before. These are estimates of where water tends to collect, not a record of this week. Red is a repeat hotspot; orange was reported once or twice.</li>
+      <li><b>311 reports (solid dots):</b> flooding-related cases people filed with SF311 in the window you pick. Blue is flooding, teal is a storm drain needing maintenance, purple is a sewage backup. Pale dots are closed cases. The public dataset updates nightly, around 6 am (<a href="https://catalog-beta.data.gov/dataset/311-cases">DataSF</a>), so today's reports appear the next morning.</li>
+      <li><b>Storm drains:</b> city drain locations from DataSF. Pink means check now (a neighbor flagged it, or an open 311 flooding or drain case is within 60 m). Amber means check first (inside the city flood zone, or in or next to a past-flood area). Green was cleared by a neighbor in the last 14 days. These rankings are this map's own rule of thumb, not a city assessment. Tap a drain to mark it cleared or flag it, with a photo. To adopt one officially, go to <a href="https://adoptadrain.sfwater.org/about">Adopt a Drain SF</a>.</li>
+      <li><b>Neighbor reports (cyan):</b> "water here" posts from people using this map in the last 48 hours. Unverified.</li>
+      <li><b>Wildlife seen (white-ringed dots):</b> plants, birds, insects, fungi and other wildlife that people photographed and posted to <a href="https://www.inaturalist.org">iNaturalist</a> in the last 30 days. Tap a dot for the photo, the name and a short description. Zoom in to a neighborhood to load them. Only sightings whose photographers allow reuse are shown, with credit.</li>
+      <li><b>Street trees (green):</b> the city's street tree list from DataSF. Dark green marks California native species, which feed far more insects and birds. Zoom in to street level to see them, and tap one for a photo of the species. Trees and their leaves are also why drains clog: the leafiest blocks are the ones to check before rain.</li>
+      <li><b>Chips above the map:</b> National Weather Service alerts and rain chance, and the next high tide from NOAA's San Francisco gauge. Heavy rain near high tide drains slowest.</li>
+      <li>Shapes are drawn by hand from the intersections articles name, so edges are accurate to a block or two. News coverage is uneven across neighborhoods, so a street with no shading is not necessarily safe.</li>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>How to read this for 1 to 2 inches of rain</h2>
+    <ul>
+      <li>The Rintaro flood came on a day with <b>5.46 inches</b>, the second-wettest day on record in San Francisco (<a href="https://preview-prod.w.sfchronicle.com/sf/article/storm-damage-weather-cost-17726925.php">SF Chronicle</a>). That is roughly three to five times your rainfall.</li>
+      <li>Rain per hour matters more than the total. In December 2019, much of the rain came down in about an hour (<a href="https://abc7news.com/weather/san-francisco-streets-flooded-during-heavy-rainstorm/5742118/">ABC7</a>).</li>
+      <li>Smaller storms have mostly meant ponding. After a storm that gave many areas an inch or more, public works dealt with about 15 flooded areas, mainly intersections (<a href="https://nbcbayarea.com/news/local/storm-downs-trees-san-francisco/3094059">NBC Bay Area</a>).</li>
+      <li><b>My reading, not a forecast:</b> steady rain over many hours means ponding in the red areas. A burst of an inch or more in an hour, or clogged drains, is when the New Year's Eve pattern repeats.</li>
+    </ul>
+    <p class="small" style="margin-top:8px">For your own block, check the <a href="https://gis.sfpuc.org/portal/apps/instant/basic/index.html?appid=5dbe439cb71f42c89de0e2af110ae1f0">SFPUC flood map</a>. To report flooding, use <a href="https://www.sf.gov/report-flooding-water-leaks-sewer-backup-or-odor-issues">SF311</a> or call 3-1-1. Browse all 311 cases in the <a href="https://sf.connect.socrata.com/">city's 311 explorer</a>.</p>
+  </section>
+  <section>
+    <h2>Past-storm areas (from news reports)</h2>
+    <p class="small" style="margin:0 0 8px">Coverage started in the Mission and is thinner elsewhere. Know a spot that floods? Use Report water during a storm.</p>
+    <div id="list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </section>
+  <p class="small">Made by neighbors, not the city. Want to add your neighborhood or fix something? See <a href="https://github.com/christinebuilds/mission-flood-map/blob/main/CONTRIBUTING.md">how to contribute</a>.</p>
+</main>
+
+<script src="vendor/leaflet.js"></script>
+<script>
+(function () {
+  var sites = [];
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function eventsHtml(ev) {
+    return ev.map(function (e) {
+      return '<li><span class="when">' + esc(e.when) + ".</span> " + esc(e.text) + ' <a href="' + esc(e.url) + '" target="_blank" rel="noopener">' + esc(e.src) + "</a></li>";
+    }).join("");
+  }
+  function segRect(a, b, w) {
+    var m = 111320, cl = Math.cos(a[0] * Math.PI / 180);
+    var dx = (b[1] - a[1]) * cl * m, dy = (b[0] - a[0]) * m, len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var nx = -dy / len * (w / 2), ny = dx / len * (w / 2);
+    function pt(p, sx, sy) { return [p[0] + sy / m, p[1] + sx / (m * cl)]; }
+    return [pt(a, nx, ny), pt(b, nx, ny), pt(b, -nx, -ny), pt(a, -nx, -ny)];
+  }
+
+  var map = L.map("map", { zoomControl: true }).setView([37.7650, -122.4400], 12);
+  var streets = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" });
+  var topo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", { maxZoom: 17, attribution: "Map data: &copy; OpenStreetMap contributors, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)" });
+  var imagery = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Imagery &copy; Esri" });
+  var hill = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, opacity: 0.5, attribution: "Hillshade &copy; Esri" });
+  streets.addTo(map);
+  hill.addTo(map);
+  L.control.layers({ "Streets": streets, "Contour terrain": topo, "Satellite": imagery }, { "Hillshade": hill }, { collapsed: true }).addTo(map);
+
+  // ---- Layer 1: estimated from past storms (news). Dashed outline, soft fill.
+  var hist = L.featureGroup().addTo(map);
+  var bounds = L.latLngBounds([]);
+  function buildPast() {
+  sites.forEach(function (s) {
+    var hot = s.tier === "repeat";
+    var col = hot ? "#c0392b" : "#e08a1e";
+    var style = { color: col, weight: 2.5, dashArray: "7 6", fillColor: col, fillOpacity: 0.3 };
+    var g = L.featureGroup();
+    s.shapes.forEach(function (sh) {
+      if (sh.type === "circle") {
+        bounds.extend(sh.center);
+        L.circle(sh.center, Object.assign({ radius: sh.radius_m }, style)).addTo(g);
+      } else {
+        sh.points.forEach(function (q) { bounds.extend(q); });
+        for (var i = 0; i < sh.points.length - 1; i++) L.polygon(segRect(sh.points[i], sh.points[i + 1], sh.width_m), style).addTo(g);
+      }
+    });
+    g.bindPopup('<span class="tag past">ESTIMATE FROM PAST STORMS</span><br><b>' + esc(s.name) + "</b><br>" + esc(s.about) + "<ul>" + eventsHtml(s.events) + "</ul>", { maxWidth: 280 });
+    g.bindTooltip(s.name + " (past storms)", { sticky: true });
+    g.on("mouseover", function () { g.setStyle({ fillOpacity: 0.5 }); });
+    g.on("mouseout", function () { g.setStyle({ fillOpacity: 0.3 }); });
+    g.addTo(hist);
+  });
+  }
+  map.fitBounds([[37.708, -122.515], [37.810, -122.357]]);
+
+  // ---- Layer 2: reported now (SF311 via DataSF). Solid dots.
+  var c311 = L.layerGroup().addTo(map);
+  var nEl = document.getElementById("n311");
+  var HOSTS = ["https://data.sf.gov", "https://data.sfgov.org"];
+  var KINDS = {
+    "flooding": { label: "Flooding", fill: "#1565c0", closed: "#90caf9", r: 9 },
+    "catch_basin": { label: "Storm drain needs maintenance", fill: "#00796b", closed: "#9fd3cc", r: 6 },
+    "sewage_back-up_discharge": { label: "Sewage backup", fill: "#6a1b9a", closed: "#cdb2dd", r: 6 }
+  };
+  function cutoff(days) {
+    var d = new Date(Date.now() - days * 864e5);
+    function p(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T00:00:00";
+  }
+  function fetchJson(url) {
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+  }
+  function tryLoad(days) {
+    var where = "service_name = 'Sewer' AND service_subtype in ('flooding','catch_basin','sewage_back-up_discharge')" +
+      " AND requested_datetime >= '" + cutoff(days) + "'";
+    var q = "$where=" + encodeURIComponent(where) + "&$order=requested_datetime%20DESC&$limit=5000";
+    var i = 0, lastErr = "";
+    function next() {
+      if (i >= HOSTS.length) return Promise.reject(new Error(lastErr || "no response"));
+      return fetchJson(HOSTS[i++] + "/resource/vw6y-z8j6.json?" + q).catch(function (e) { lastErr = e.message; return next(); });
+    }
+    return next();
+  }
+  function fmt(t) {
+    var d = new Date(t);
+    return isNaN(d) ? esc(t) : d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+  function nice(s) { return String(s || "").replace(/_/g, " "); }
+  function load311() {
+    c311.clearLayers();
+    var days = parseInt(document.getElementById("days").value, 10);
+    nEl.textContent = "Loading SF311 reports…";
+    tryLoad(days).then(function (rows) {
+      var counts = { flooding: 0, other: 0 }, asOf = "";
+      last311 = rows; restyleDrains();
+      rows.forEach(function (r) {
+        var la = parseFloat(r.lat), lo = parseFloat(r.long), k = KINDS[r.service_subtype];
+        if (isNaN(la) || isNaN(lo) || !k) return;
+        if (r.data_as_of && r.data_as_of > asOf) asOf = r.data_as_of;
+        if (r.service_subtype === "flooding") counts.flooding++; else counts.other++;
+        var open = /open/i.test(r.status_description || "");
+        var m = L.circleMarker([la, lo], { radius: k.r, color: "#ffffff", weight: 2, fillColor: open ? k.fill : k.closed, fillOpacity: 0.95 });
+        m.bindPopup('<span class="tag now">REPORTED TO SF311</span><br><b>' + esc(k.label) + (r.service_details ? " (" + esc(nice(r.service_details)) + ")" : "") + "</b><br>" +
+          esc((r.address || "").replace(/, SAN FRANCISCO.*/, "")) + "<br>Filed " + fmt(r.requested_datetime) + "<br>Status: " + esc(r.status_description || "unknown") +
+          "<br>Case " + esc(r.service_request_id) + ' · <a href="https://sf311.org/track-case" target="_blank" rel="noopener">Track on SF311</a>' +
+          '<br><span class="small">Source: SF311 open data (DataSF).</span>');
+        m.bindTooltip("311: " + k.label, { sticky: true });
+        m.addTo(c311);
+      });
+      nEl.textContent = counts.flooding + " flooding reports and " + counts.other + " drain or sewage-backup reports to SF311 citywide, last " + days + (days === 1 ? " day" : " days") + "." + (asOf ? " City data as of " + fmt(asOf) + "; it refreshes overnight." : "");
+    }).catch(function (e) {
+      nEl.textContent = "SF311 reports did not load (" + e.message + "). Open the city's 311 explorer at sf.connect.socrata.com instead.";
+    });
+  }
+
+
+  // ================= Backend (Supabase): neighbor reports and photos =================
+  var SB = "https://bfluyofnayvfevojofuu.supabase.co";
+  var SBKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbHV5b2ZuYXl2ZmV2b2pvZnV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1ODY2NzUsImV4cCI6MjExMDE2MjY3NX0.ZbKiDYMvsQftF0vuXXvlNt5PcqHMvjSus71mUc8me5s";
+  function sb(path, opt) {
+    opt = opt || {};
+    opt.headers = Object.assign({ apikey: SBKEY, Authorization: "Bearer " + SBKEY }, opt.headers || {});
+    return fetch(SB + path, opt);
+  }
+  function photoUrl(p) { return /^[a-f0-9-]{36}\.jpg$/.test(p || "") ? SB + "/storage/v1/object/public/drain-photos-public/" + p : ""; }
+  function ago(t) {
+    var h = (Date.now() - new Date(t).getTime()) / 36e5;
+    if (h < 1) return "under an hour ago";
+    if (h < 48) return Math.round(h) + " h ago";
+    return Math.round(h / 24) + " days ago";
+  }
+  function distM(a, b) {
+    var cl = Math.cos(a[0] * Math.PI / 180), dx = (a[1] - b[1]) * cl * 111320, dy = (a[0] - b[0]) * 111320;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function distSeg(p, a, b) {
+    var cl = Math.cos(a[0] * Math.PI / 180), m = 111320;
+    var px = (p[1] - a[1]) * cl * m, py = (p[0] - a[0]) * m, bx = (b[1] - a[1]) * cl * m, by = (b[0] - a[0]) * m;
+    var l2 = bx * bx + by * by, u = l2 ? Math.max(0, Math.min(1, (px * bx + py * by) / l2)) : 0;
+    var dx = px - u * bx, dy = py - u * by;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function nearPast(ll) {
+    var best = 1e9;
+    sites.forEach(function (s) { s.shapes.forEach(function (sh) {
+      if (sh.type === "circle") best = Math.min(best, distM(ll, sh.center) - sh.radius_m);
+      else for (var i = 0; i < sh.points.length - 1; i++) best = Math.min(best, distSeg(ll, sh.points[i], sh.points[i + 1]) - sh.width_m / 2);
+    }); });
+    return best <= 60;
+  }
+
+  // ================= Storm drains (DataSF) =================
+  var canvas = L.canvas({ padding: 0.3 });
+  var drainsPri = L.layerGroup(), drainsAll = L.layerGroup();
+  var drains = [], last311 = [], reports = [], latestByDrain = {};
+  var DCOL = { urgent: "#d81b60", check: "#f9a825", clear: "#2e7d32", ok: "#9aa7ad" };
+  var DLAB = { urgent: "CHECK NOW", check: "CHECK FIRST", clear: "CLEARED RECENTLY", ok: "NO FLAGS" };
+
+  function drainStatus(d) {
+    var r = latestByDrain[d.id];
+    if (r && r.kind === "needs_clearing") return { k: "urgent", why: "A neighbor flagged it " + ago(r.created_at) + ".", rep: r };
+    if (r && r.kind === "cleared" && Date.now() - new Date(r.created_at).getTime() < 14 * 864e5) return { k: "clear", why: "A neighbor cleared it " + ago(r.created_at) + ".", rep: r };
+    if (d.n311) return { k: "urgent", why: "An open SF311 flooding or drain case is within 60 m.", rep: r };
+    if (d.near) return { k: "check", why: (d.nearP ? "In or next to an area that flooded in past storms." : "Inside the city's 100-year storm flood zone.") + (r ? " Last cleared " + ago(r.created_at) + "." : ""), rep: r };
+    return { k: "ok", why: "No flags from this map's data.", rep: r };
+  }
+  function drainPopup(d) {
+    var s = drainStatus(d), el = document.createElement("div");
+    var pu = s.rep ? photoUrl(s.rep.photo_path) : "";
+    el.innerHTML = '<span class="tag" style="background:' + DCOL[s.k] + ';color:#fff">' + DLAB[s.k] + "</span><br><b>Storm drain</b> · " + esc(d.type || "") +
+      "<br>" + esc(s.why) + (s.rep && s.rep.note ? "<br><i>" + esc(s.rep.note) + "</i>" : "") +
+      (pu ? '<img class="pimg" alt="Photo posted by a neighbor" src="' + pu + '">' : "") +
+      '<div class="pbtns"><button type="button" data-k="cleared">I cleared it</button><button type="button" class="alt" data-k="needs_clearing">Needs clearing</button></div>' +
+      '<span class="small">Drain ' + esc(d.id) + ' · <a href="https://adoptadrain.sfwater.org/about" target="_blank" rel="noopener">Adopt a Drain SF</a></span>';
+    Array.prototype.forEach.call(el.querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () { openForm(b.getAttribute("data-k"), d.ll, d.id); });
+    });
+    return el;
+  }
+  function restyleDrains() {
+    if (!drains.length) return;
+    var hot = last311.filter(function (r) {
+      return /open/i.test(r.status_description || "") && (r.service_subtype === "flooding" || r.service_subtype === "catch_basin") && !isNaN(parseFloat(r.lat));
+    }).map(function (r) { return [parseFloat(r.lat), parseFloat(r.long)]; });
+    drainsPri.clearLayers(); drainsAll.clearLayers();
+    var n = { urgent: 0, check: 0, clear: 0, ok: 0 };
+    drains.forEach(function (d) {
+      d.n311 = hot.some(function (h) { return distM(d.ll, h) <= 60; });
+      if (zoneReady && d.inZ === undefined) d.inZ = inZone(d.ll);
+      d.near = d.nearP || d.inZ;
+      var s = drainStatus(d); n[s.k]++;
+      var pri = s.k !== "ok";
+      var m = L.circleMarker(d.ll, { renderer: canvas, radius: pri ? 6 : 4, color: "#222", weight: pri ? 2 : 1, fillColor: DCOL[s.k], fillOpacity: pri ? 0.95 : 0.7 });
+      m.bindPopup(function () { return drainPopup(d); }, { maxWidth: 260 });
+      m.addTo(pri ? drainsPri : drainsAll);
+    });
+    document.getElementById("nDrain").textContent = drains.length + " city storm drains loaded for this view: " + n.urgent + " check now, " + n.check + " check first, " + n.clear + " cleared in the last 14 days. Zoom in closer to see every drain.";
+    syncDrains();
+  }
+  function syncDrains() {
+    var on = document.getElementById("tDrain").checked, z = map.getZoom();
+    (on && z >= 15) ? drainsPri.addTo(map) : map.removeLayer(drainsPri);
+    (on && z >= 17) ? drainsAll.addTo(map) : map.removeLayer(drainsAll);
+    if (z < 15) document.getElementById("nDrain").textContent = "Zoom in to a neighborhood to see storm drains.";
+    else if (on) loadDrainsSoon();
+  }
+  var drainById = {}, drainTimer = null;
+  function loadDrainsSoon() { clearTimeout(drainTimer); drainTimer = setTimeout(loadDrains, 400); }
+  map.on("moveend", function () { if (map.getZoom() >= 15 && document.getElementById("tDrain").checked) loadDrainsSoon(); });
+  map.on("zoomend", syncDrains);
+  function loadDrains() {
+    if (map.getZoom() < 15) return;
+    var b = map.getBounds().pad(0.2);
+    var q = "$select=dpw_node_id,drain_type,location&$where=" + encodeURIComponent("within_box(location, " + b.getNorth().toFixed(5) + ", " + b.getWest().toFixed(5) + ", " + b.getSouth().toFixed(5) + ", " + b.getEast().toFixed(5) + ")") + "&$limit=5000";
+    fetchJson(HOSTS[0] + "/resource/jtgq-b7c5.json?" + q).then(function (rows) {
+      if (drains.length > 8000) { drains = []; drainById = {}; }
+      rows.forEach(function (r) {
+        var c = r.location && r.location.coordinates, id = String(r.dpw_node_id || "");
+        if (!c || !id || drainById[id]) return;
+        var ll = [parseFloat(c[1]), parseFloat(c[0])];
+        if (isNaN(ll[0]) || isNaN(ll[1])) return;
+        var d = { id: id, type: r.drain_type, ll: ll, nearP: nearPast(ll) };
+        drainById[id] = d; drains.push(d);
+      });
+      restyleDrains();
+    }).catch(function (e) { document.getElementById("nDrain").textContent = "Storm drains did not load (" + e.message + ")."; });
+  }
+
+  // ================= City 100-year storm flood zone (SFPUC, via DataSF) =================
+  var zonePolys = [], zoneReady = false;
+  var zoneLayer = L.geoJSON(null, { renderer: canvas, style: { color: "#5e35b1", weight: 1, fillColor: "#5e35b1", fillOpacity: 0.2 }, interactive: true });
+  zoneLayer.bindPopup('<span class="tag" style="background:#ede7f6;color:#4527a0">CITY MODEL · OFFICIAL</span><br><b>100-year storm flood risk zone</b><br>The SFPUC says areas inside this boundary are highly likely to see deep, connected flooding in a 100-year storm. It covers storm runoff only, not bay or ocean flooding, and a normal storm is far smaller.<br><a href="https://www.sfpuc.gov/learning/emergency-preparedness/flood-maps" target="_blank" rel="noopener">SFPUC flood maps</a>', { maxWidth: 270 });
+  zoneLayer.addTo(map); zoneLayer.bringToBack && zoneLayer.bringToBack();
+  function indexZone(gj) {
+    zonePolys = [];
+    (gj.features || []).forEach(function (f) {
+      var g = f.geometry; if (!g) return;
+      var polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+      polys.forEach(function (rings) {
+        var x0 = 999, y0 = 999, x1 = -999, y1 = -999;
+        (rings[0] || []).forEach(function (p) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; });
+        zonePolys.push({ b: [x0, y0, x1, y1], rings: rings });
+      });
+    });
+    zoneReady = true;
+  }
+  function inZone(ll) {
+    var x = ll[1], y = ll[0];
+    for (var k = 0; k < zonePolys.length; k++) {
+      var z = zonePolys[k], b = z.b;
+      if (x < b[0] || x > b[2] || y < b[1] || y > b[3]) continue;
+      var inside = false;
+      for (var r = 0; r < z.rings.length; r++) {
+        var ring = z.rings[r];
+        for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+          var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+          if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+        }
+      }
+      if (inside) return true;
+    }
+    return false;
+  }
+  function loadZone() {
+    var base = HOSTS[0] + "/resource/jzu3-4yxp.geojson";
+    fetchJson(base + "?$select=" + encodeURIComponent("simplify_preserve_topology(the_geom, 0.00003) as the_geom"))
+      .catch(function () { return fetchJson(base); })
+      .then(function (gj) {
+        zoneLayer.addData(gj); zoneLayer.bringToBack && zoneLayer.bringToBack();
+        indexZone(gj); drains.forEach(function (d) { delete d.inZ; }); restyleDrains();
+      }).catch(function (e) { document.getElementById("tileMsg").textContent = "The city flood zone layer did not load (" + e.message + ")."; });
+  }
+
+  // ================= Neighbor reports =================
+  var repLayer = L.layerGroup().addTo(map);
+  function loadReports() {
+    sb("/rest/v1/reports_public?select=id,created_at,kind,drain_id,lat,lon,note,photo_path&order=created_at.desc&limit=1000")
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (rows) {
+        reports = rows; latestByDrain = {};
+        rows.forEach(function (r) { if (r.drain_id && !latestByDrain[r.drain_id]) latestByDrain[r.drain_id] = r; });
+        repLayer.clearLayers();
+        var nW = 0;
+        rows.forEach(function (r) {
+          if (r.kind !== "water" || Date.now() - new Date(r.created_at).getTime() > 48 * 36e5) return;
+          nW++;
+          var pu = photoUrl(r.photo_path);
+          L.circleMarker([r.lat, r.lon], { radius: 10, color: "#004d5a", weight: 3, fillColor: "#00bcd4", fillOpacity: 0.9 })
+            .bindPopup('<span class="tag" style="background:#00bcd4;color:#00323b">NEIGHBOR REPORT · UNVERIFIED</span><br><b>Water here</b><br>Posted ' + esc(ago(r.created_at)) +
+              (r.note ? "<br><i>" + esc(r.note) + "</i>" : "") + (pu ? '<img class="pimg" alt="Photo posted by a neighbor" src="' + pu + '">' : ""), { maxWidth: 260 })
+            .addTo(repLayer);
+        });
+        document.getElementById("nRep").textContent = nW + ' neighbor "water here" reports in the last 48 hours. Use the Report water button on the map to add one.';
+        restyleDrains();
+      }).catch(function (e) { document.getElementById("nRep").textContent = "Neighbor reports did not load (" + e.message + ")."; });
+  }
+
+  // ---- Report form
+  var cur = null, picking = false;
+  var sheet = document.getElementById("sheet"), rfMsg = document.getElementById("rfMsg");
+  var TITLES = { cleared: "I cleared this drain", needs_clearing: "This drain needs clearing", water: "Water here now" };
+  function openForm(kind, ll, drainId) {
+    cur = { kind: kind, ll: ll, drainId: drainId || null };
+    map.closePopup();
+    document.getElementById("rfTitle").textContent = TITLES[kind];
+    document.getElementById("rfWhere").textContent = drainId ? "Storm drain " + drainId : "At " + ll[0].toFixed(5) + ", " + ll[1].toFixed(5);
+    document.getElementById("rfNote").value = ""; document.getElementById("rfPhoto").value = ""; rfMsg.textContent = "";
+    document.getElementById("rfGo").disabled = false;
+    sheet.hidden = false;
+  }
+  document.getElementById("rfCancel").addEventListener("click", function () { sheet.hidden = true; });
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g, function () { return Math.floor(Math.random() * 16).toString(16); });
+  }
+  // Re-encoding through a canvas shrinks the photo and drops its embedded GPS data.
+  function shrink(file) {
+    return new Promise(function (res, rej) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var s = Math.min(1, 1280 / Math.max(img.width, img.height));
+        var c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (b) { b ? res(b) : rej(new Error("could not read photo")); }, "image/jpeg", 0.8);
+      };
+      img.onerror = function () { rej(new Error("could not read photo")); };
+      img.src = url;
+    });
+  }
+  function upload(blob) {
+    var name = uuid() + ".jpg";
+    return sb("/storage/v1/object/drain-photos/" + name, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob })
+      .then(function (r) { if (!r.ok) throw new Error("photo upload failed (HTTP " + r.status + ")"); return name; });
+  }
+  document.getElementById("rf").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!cur) return;
+    var go = document.getElementById("rfGo"); go.disabled = true; rfMsg.textContent = "Posting…";
+    var f = document.getElementById("rfPhoto").files[0], note = document.getElementById("rfNote").value.trim();
+    (f ? shrink(f).then(upload) : Promise.resolve(null)).then(function (path) {
+      return sb("/rest/v1/reports", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ kind: cur.kind, drain_id: cur.drainId, lat: cur.ll[0], lon: cur.ll[1], note: note || null, photo_path: path }) });
+    }).then(function (r) {
+      if (!r.ok) return r.text().then(function (x) { throw new Error("HTTP " + r.status + " " + x.slice(0, 120)); });
+      sheet.hidden = true;
+      document.getElementById("nRep").textContent = "Posted. Notes and photos appear after an automatic check.";
+      return sb("/functions/v1/moderate", { method: "POST" }).catch(function () {}).then(loadReports);
+    }).catch(function (err) { go.disabled = false; rfMsg.textContent = "Could not post: " + err.message; });
+  });
+  var pickMsg = document.getElementById("pickMsg");
+  var repBtn = L.control({ position: "topright" });
+  repBtn.onAdd = function () {
+    var b = L.DomUtil.create("button", "leaflet-bar");
+    b.type = "button"; b.textContent = "Report water";
+    b.style.cssText = "background:#00bcd4;color:#00323b;border:2px solid #004d5a;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;border-radius:6px";
+    L.DomEvent.on(b, "click", function (e) { L.DomEvent.stop(e); picking = true; pickMsg.hidden = false; });
+    return b;
+  };
+  repBtn.addTo(map);
+  map.on("click", function (e) {
+    if (!picking) return;
+    picking = false; pickMsg.hidden = true;
+    openForm("water", [e.latlng.lat, e.latlng.lng], null);
+  });
+
+  // ================= Nature: wildlife sightings (iNaturalist) and street trees (DataSF) =================
+  var INAT = "https://api.inaturalist.org/v1";
+  var OPEN_LIC = ["cc0", "cc-by", "cc-by-nc", "cc-by-sa", "cc-by-nc-sa", "cc-by-nd", "cc-by-nc-nd"];
+  var GROUPS = {
+    Aves: ["Bird", "#d0581c"], Insecta: ["Insect", "#7b4bb8"], Arachnida: ["Spider or relative", "#7b4bb8"], Mollusca: ["Snail, slug or shellfish", "#7b4bb8"],
+    Animalia: ["Small animal", "#7b4bb8"], Plantae: ["Plant", "#8aa21c"], Fungi: ["Fungus", "#8a5a2b"], Mammalia: ["Mammal", "#c43b78"],
+    Reptilia: ["Reptile", "#c43b78"], Amphibia: ["Amphibian", "#c43b78"], Actinopterygii: ["Fish", "#7b4bb8"]
+  };
+  var NATIVE = ["Quercus agrifolia", "Quercus lobata", "Quercus kelloggii", "Quercus douglasii", "Quercus chrysolepis", "Quercus wislizeni", "Arbutus menziesii", "Aesculus californica",
+    "Umbellularia californica", "Platanus racemosa", "Heteromeles arbutifolia", "Cercis occidentalis", "Ceanothus", "Lyonothamnus floribundus", "Prunus ilicifolia", "Prunus lyonii",
+    "Acer macrophyllum", "Acer negundo", "Sequoia sempervirens", "Sequoiadendron giganteum", "Cupressus macrocarpa", "Hesperocyparis macrocarpa", "Pinus radiata", "Pinus muricata",
+    "Pinus sabiniana", "Juglans californica", "Juglans hindsii", "Washingtonia filifera", "Frangula californica", "Rhamnus californica", "Sambucus", "Garrya elliptica",
+    "Morella californica", "Myrica californica", "Alnus rhombifolia", "Alnus rubra", "Populus fremontii", "Populus trichocarpa", "Salix lasiolepis", "Calocedrus decurrens",
+    "Cercocarpus", "Fraxinus latifolia", "Cornus nuttallii", "Arctostaphylos", "Torreya californica", "Notholithocarpus densiflorus"];
+  var wildLayer = L.layerGroup(), treeLayer = L.layerGroup();
+  var wildSeen = {}, treeSeen = {}, taxonCache = {}, nWild = 0, nTree = 0, natureTimer = null;
+  var nNat = document.getElementById("nNature");
+
+  function plain(html, max) {
+    var t = (new DOMParser().parseFromString(String(html || ""), "text/html").body.textContent || "").replace(/\s+/g, " ").trim();
+    if (t.length <= max) return t;
+    var cut = t.slice(0, max), dot = cut.lastIndexOf(". ");
+    return dot > 80 ? cut.slice(0, dot + 1) : cut + "…";
+  }
+  function openPhoto(p) { return p && OPEN_LIC.indexOf(p.license_code || "") >= 0 ? p : null; }
+  // One species lookup per name, shared by every tree or sighting of that species.
+  function taxonInfo(key, url) {
+    if (!taxonCache[key]) {
+      taxonCache[key] = fetchJson(url).then(function (j) {
+        var t = (j.results || [])[0];
+        if (!t) return null;
+        return t.wikipedia_summary !== undefined ? t : fetchJson(INAT + "/taxa/" + t.id).then(function (k) { return (k.results || [])[0] || t; });
+      }).catch(function () { return null; });
+    }
+    return taxonCache[key];
+  }
+  function fillAbout(el, t, wantPhoto) {
+    if (!t) return;
+    var ph = wantPhoto ? openPhoto(t.default_photo) : null;
+    if (wantPhoto && !ph) (t.taxon_photos || []).some(function (tp) { ph = openPhoto(tp.photo); return !!ph; });
+    if (ph) {
+      var img = document.createElement("img"); img.className = "nimg"; img.loading = "lazy";
+      img.alt = "Photo of " + (t.preferred_common_name || t.name); img.src = (ph.medium_url || ph.url || "").replace("square", "small");
+      var cr = document.createElement("div"); cr.className = "ncredit"; cr.textContent = "Example photo: " + (ph.attribution || "iNaturalist");
+      el.querySelector(".nphoto").appendChild(img); el.querySelector(".nphoto").appendChild(cr);
+    }
+    var about = plain(t.wikipedia_summary, 260);
+    if (about) { var p = document.createElement("p"); p.className = "nabout"; p.textContent = about; el.querySelector(".nmore").appendChild(p); }
+  }
+
+  function wildPopup(o) {
+    var t = o.taxon || {}, g = GROUPS[t.iconic_taxon_name] || ["Wildlife", "#7b4bb8"], ph = openPhoto((o.photos || [])[0]);
+    var el = document.createElement("div");
+    var name = t.preferred_common_name || o.species_guess || t.name || "Not yet identified";
+    el.innerHTML = '<span class="tag nat">' + esc(g[0].toUpperCase()) + " · SEEN BY A NEIGHBOR</span><br><b>" + esc(name) + "</b>" +
+      (t.name && t.name !== name ? " <i>(" + esc(t.name) + ")</i>" : "") + '<div class="nphoto"></div>' +
+      "Seen " + esc(o.observed_on || "") + ' · <a href="' + esc(o.uri) + '" target="_blank" rel="noopener">iNaturalist</a><div class="nmore"></div>';
+    if (ph) {
+      var img = document.createElement("img"); img.className = "nimg"; img.alt = "Photo of " + name; img.src = ph.url.replace("square", "small");
+      var cr = document.createElement("div"); cr.className = "ncredit"; cr.textContent = "Photo " + (ph.attribution || "");
+      el.querySelector(".nphoto").appendChild(img); el.querySelector(".nphoto").appendChild(cr);
+    }
+    if (t.id) taxonInfo("id:" + t.id, INAT + "/taxa/" + t.id).then(function (info) { fillAbout(el, info, false); });
+    return el;
+  }
+  function loadWild() {
+    var b = map.getBounds();
+    var d1 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+    var q = "nelat=" + b.getNorth().toFixed(4) + "&nelng=" + b.getEast().toFixed(4) + "&swlat=" + b.getSouth().toFixed(4) + "&swlng=" + b.getWest().toFixed(4) +
+      "&d1=" + d1 + "&photos=true&photo_license=" + OPEN_LIC.join(",") + "&geoprivacy=open&order_by=observed_on&per_page=200";
+    fetchJson(INAT + "/observations?" + q).then(function (j) {
+      (j.results || []).forEach(function (o) {
+        if (wildSeen[o.id] || !o.location || o.obscured) return;
+        var ll = o.location.split(",").map(parseFloat);
+        if (isNaN(ll[0]) || isNaN(ll[1])) return;
+        wildSeen[o.id] = true; nWild++;
+        var g = GROUPS[(o.taxon || {}).iconic_taxon_name] || ["Wildlife", "#7b4bb8"];
+        var m = L.circleMarker(ll, { radius: 7, color: "#ffffff", weight: 2, fillColor: g[1], fillOpacity: 0.95 });
+        m.bindPopup(function () { return wildPopup(o); }, { maxWidth: 260, minWidth: 220 });
+        m.bindTooltip(((o.taxon || {}).preferred_common_name || o.species_guess || g[0]) + " · " + (o.observed_on || ""), { sticky: true });
+        m.addTo(wildLayer);
+      });
+      natureMsg();
+    }).catch(function (e) { nNat.textContent = "Wildlife sightings did not load (" + e.message + ")."; });
+  }
+
+  function isNative(sci) { return NATIVE.some(function (n) { return sci.indexOf(n) === 0; }); }
+  function cleanSci(sci) { return sci.replace(/'[^']*'/g, "").replace(/\b(spp|sps|sp|ssp|subsp|var|x)\b\.?/gi, " ").trim().split(/\s+/).slice(0, 2).join(" "); }
+  function treePopup(r, sci, common, nat) {
+    var el = document.createElement("div");
+    el.innerHTML = '<span class="tag nat">' + (nat ? "STREET TREE · CALIFORNIA NATIVE" : "STREET TREE") + "</span><br><b>" + esc(common || sci || "Tree") + "</b>" +
+      (sci && sci !== common ? " <i>(" + esc(sci) + ")</i>" : "") + '<div class="nphoto"></div>' +
+      (r.onstreet ? "On " + esc(r.onstreet) + ". " : "") + (nat ? "Native trees feed far more local insects and birds. " : "") +
+      '<div class="nmore"></div><span class="small">Source: SF street tree list (DataSF).</span>';
+    var q = cleanSci(sci || "");
+    if (q && !/^tree/i.test(q)) taxonInfo("q:" + q, INAT + "/taxa?per_page=1&q=" + encodeURIComponent(q)).then(function (info) { fillAbout(el, info, true); });
+    return el;
+  }
+  function loadTrees() {
+    var b = map.getBounds().pad(0.1);
+    var where = "latitude between " + b.getSouth().toFixed(5) + " and " + b.getNorth().toFixed(5) + " AND longitude between " + b.getWest().toFixed(5) + " and " + b.getEast().toFixed(5);
+    fetchJson(HOSTS[0] + "/resource/tkzw-k3nq.json?$select=treeid,species,onstreet,latitude,longitude&$where=" + encodeURIComponent(where) + "&$limit=4000").then(function (rows) {
+      rows.forEach(function (r) {
+        var la = parseFloat(r.latitude), lo = parseFloat(r.longitude);
+        if (!r.treeid || treeSeen[r.treeid] || isNaN(la) || isNaN(lo)) return;
+        treeSeen[r.treeid] = true; nTree++;
+        var parts = String(r.species || "").split("::"), sci = (parts[0] || "").trim(), common = (parts[1] || "").trim() || sci;
+        var nat = isNative(sci);
+        var m = L.circleMarker([la, lo], { renderer: canvas, radius: nat ? 6 : 4, color: "#ffffff", weight: 1, fillColor: nat ? "#17603a" : "#2f8a4a", fillOpacity: nat ? 0.95 : 0.6 });
+        m.bindPopup(function () { return treePopup(r, sci, common, nat); }, { maxWidth: 260, minWidth: 220 });
+        m.addTo(treeLayer);
+      });
+      natureMsg();
+    }).catch(function (e) { nNat.textContent = "Street trees did not load (" + e.message + ")."; });
+  }
+  function natureMsg() {
+    var z = map.getZoom(), w = document.getElementById("tWild").checked, t = document.getElementById("tTree").checked;
+    if (!w && !t) { nNat.textContent = ""; return; }
+    if (z < 14) { nNat.textContent = "Zoom in to a neighborhood to see wildlife sightings, and to street level for trees."; return; }
+    nNat.textContent = (w ? nWild + " wildlife sightings from the last 30 days loaded (iNaturalist). " : "") +
+      (t ? (z >= 17 ? nTree + " street trees loaded (DataSF)." : "Zoom in closer to see street trees.") : "");
+  }
+  function syncNature() {
+    var z = map.getZoom(), w = document.getElementById("tWild").checked, t = document.getElementById("tTree").checked;
+    (w && z >= 14) ? wildLayer.addTo(map) : map.removeLayer(wildLayer);
+    (t && z >= 17) ? treeLayer.addTo(map) : map.removeLayer(treeLayer);
+    natureMsg();
+    clearTimeout(natureTimer);
+    natureTimer = setTimeout(function () { if (w && z >= 14) loadWild(); if (t && z >= 17) loadTrees(); }, 600);
+  }
+  map.on("moveend", syncNature);
+  document.getElementById("tWild").addEventListener("change", syncNature);
+  document.getElementById("tTree").addEventListener("change", syncNature);
+  syncNature();
+
+  // ================= Live conditions =================
+  var radar = L.tileLayer("https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png", { opacity: 0.6, maxZoom: 19, attribution: "Radar: NWS NEXRAD via Iowa Environmental Mesonet" });
+  function loadLive() {
+    var cA = document.getElementById("cAlert"), cR = document.getElementById("cRain"), cT = document.getElementById("cTide");
+    fetchJson("https://api.weather.gov/alerts/active?point=37.765,-122.41").then(function (j) {
+      var ev = (j.features || []).map(function (f) { return f.properties && f.properties.event; }).filter(Boolean);
+      cA.className = ev.length ? "chip alert" : "chip";
+      cA.textContent = ev.length ? "NWS alert: " + ev.join(", ") : "No active NWS alerts";
+    }).catch(function () { cA.textContent = "Weather alerts unavailable"; });
+    fetchJson("https://api.weather.gov/points/37.765,-122.41").then(function (j) { return fetchJson(j.properties.forecastHourly); }).then(function (j) {
+      var best = null;
+      (j.properties.periods || []).slice(0, 12).forEach(function (p) {
+        var v = p.probabilityOfPrecipitation && p.probabilityOfPrecipitation.value;
+        if (v != null && (!best || v > best.v)) best = { v: v, t: p.startTime };
+      });
+      cR.textContent = best ? "Rain chance next 12 h: up to " + best.v + "% (" + new Date(best.t).toLocaleTimeString("en-US", { hour: "numeric" }) + ")" : "Rain chance unavailable";
+    }).catch(function () { cR.textContent = "Rain chance unavailable"; });
+    var d = new Date(), ymd = "" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
+    fetchJson("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=" + ymd + "&range=48&station=9414290&product=predictions&interval=hilo&datum=MLLW&time_zone=lst_ldt&units=english&format=json").then(function (j) {
+      var nx = (j.predictions || []).filter(function (p) { return p.type === "H" && new Date(p.t.replace(" ", "T")).getTime() > Date.now(); })[0];
+      cT.textContent = nx ? "Next high tide: " + new Date(nx.t.replace(" ", "T")).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) + ", " + parseFloat(nx.v).toFixed(1) + " ft" : "Tide unavailable";
+    }).catch(function () { cT.textContent = "Tide unavailable"; });
+  }
+
+  document.getElementById("tDrain").addEventListener("change", syncDrains);
+  document.getElementById("tZone").addEventListener("change", function (e) { if (e.target.checked) { zoneLayer.addTo(map); zoneLayer.bringToBack(); } else map.removeLayer(zoneLayer); });
+  document.getElementById("tRep").addEventListener("change", function (e) { e.target.checked ? repLayer.addTo(map) : map.removeLayer(repLayer); });
+  document.getElementById("tRadar").addEventListener("change", function (e) { e.target.checked ? radar.addTo(map) : map.removeLayer(radar); });
+  loadZone(); loadReports(); loadLive(); syncDrains();
+  setInterval(loadReports, 120000); setInterval(loadLive, 600000);
+
+  // ---- Toggles
+  document.getElementById("tHist").addEventListener("change", function (e) { e.target.checked ? hist.addTo(map) : map.removeLayer(hist); });
+  document.getElementById("t311").addEventListener("change", function (e) { e.target.checked ? c311.addTo(map) : map.removeLayer(c311); });
+  document.getElementById("days").addEventListener("change", load311);
+  load311();
+
+  // ---- Legend, locate, tile warning
+  var legend = L.control({ position: "bottomleft" });
+  legend.onAdd = function () {
+    var d = L.DomUtil.create("div", "legend");
+    L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+    d.innerHTML = '<details' + (window.innerWidth >= 700 ? " open" : "") + '><summary>Legend</summary><b>City model (official)</b>' +
+      '<span class="lsw" style="background:rgba(94,53,177,.2);border:2px solid #5e35b1"></span>100-year storm flood zone<br>' +
+      '<b>Estimated from past storms</b>' +
+      '<span class="lsw" style="background:rgba(192,57,43,.3);border-color:#c0392b"></span>Repeat hotspot<br>' +
+      '<span class="lsw" style="background:rgba(224,138,30,.3);border-color:#e08a1e"></span>Reported once or twice<br>' +
+      '<b>Reported to SF311 now</b>' +
+      '<span class="ldot" style="background:#1565c0"></span>Flooding<br>' +
+      '<span class="ldot" style="background:#00796b"></span>Storm drain needs maintenance<br>' +
+      '<span class="ldot" style="background:#6a1b9a"></span>Sewage backup<br>' +
+      'Pale dot = case closed' +
+      '<b>Storm drains (dark outline)</b>' +
+      '<span class="ldot" style="background:#d81b60;border-color:#222"></span>Check now<br>' +
+      '<span class="ldot" style="background:#f9a825;border-color:#222"></span>Check first<br>' +
+      '<span class="ldot" style="background:#2e7d32;border-color:#222"></span>Cleared in last 14 days<br>' +
+      '<b>Neighbor reports</b>' +
+      '<span class="ldot" style="background:#00bcd4;border-color:#004d5a"></span>Water here (unverified)' +
+      '<b>Nature (zoom in)</b>' +
+      '<span class="ldot" style="background:#d0581c"></span>Bird<br>' +
+      '<span class="ldot" style="background:#7b4bb8"></span>Insect or other small animal<br>' +
+      '<span class="ldot" style="background:#8aa21c"></span>Plant<br>' +
+      '<span class="ldot" style="background:#8a5a2b"></span>Fungus<br>' +
+      '<span class="ldot" style="background:#c43b78"></span>Mammal, reptile or amphibian<br>' +
+      '<span class="ldot" style="background:#2f8a4a"></span>Street tree<br>' +
+      '<span class="ldot" style="background:#17603a"></span>California native tree</details>';
+    return d;
+  };
+  legend.addTo(map);
+
+  var loc = L.control({ position: "topleft" });
+  loc.onAdd = function () {
+    var b = L.DomUtil.create("button", "leaflet-bar");
+    b.type = "button"; b.textContent = "Locate me";
+    b.style.cssText = "background:#fff;color:#16252d;border:none;padding:6px 10px;font-size:13px;cursor:pointer;border-radius:4px";
+    L.DomEvent.on(b, "click", function (e) { L.DomEvent.stop(e); map.locate({ setView: true, maxZoom: 16 }); });
+    return b;
+  };
+  loc.addTo(map);
+  var you;
+  map.on("locationfound", function (e) { if (you) map.removeLayer(you); you = L.circleMarker(e.latlng, { radius: 7, color: "#fff", weight: 2, fillColor: "#16252d", fillOpacity: 1 }).addTo(map); });
+
+  var tilesOk = false;
+  function warn() {
+    if (tilesOk) return;
+    document.getElementById("tileMsg").textContent = "The street basemap did not load. The shaded areas still show. If you are in a preview, open the file in Safari or Chrome so map tiles can load.";
+  }
+  [streets, topo, imagery, hill].forEach(function (t) { t.on("tileload", function () { tilesOk = true; document.getElementById("tileMsg").textContent = ""; }); });
+  streets.on("tileerror", function () { setTimeout(warn, 1500); });
+  setTimeout(warn, 6000);
+
+  function buildList() {
+  var list = document.getElementById("list");
+  sites.forEach(function (s) {
+    var d = document.createElement("details");
+    if (s.tier === "repeat") d.className = "hot";
+    d.innerHTML = "<summary>" + esc(s.name) + "<small>" + (s.tier === "repeat" ? "repeat hotspot" : "reported") + "</small></summary><p class='small' style='margin:6px 0 0'>" + esc(s.about) + "</p><ul>" + eventsHtml(s.events) + "</ul>";
+    list.appendChild(d);
+  });
+  }
+  fetchJson("data/past-storms.json").then(function (j) {
+    sites = j.areas || [];
+    buildPast(); buildList();
+    drains.forEach(function (d) { d.nearP = nearPast(d.ll); });
+    restyleDrains();
+  }).catch(function (e) { document.getElementById("tileMsg").textContent = "Past-storm areas did not load (" + e.message + ")."; });
+})();
+</script>
+</body>
+</html>
