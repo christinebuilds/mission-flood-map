@@ -22,8 +22,7 @@ This is not an official city service or a warning system. In an emergency call 9
 ## Three pages
 
 - **Storms & flooding** (`index.html`, the main link): flood risk, reports and storm drains only.
-- **Plan a walk** (`walk.html`): tap a start and an end to get a walking route, what neighbors have photographed along it (iNaturalist), the street trees you will pass, any stretch inside the flood zone, short detours worth taking, and the driest time to go.
-- **Mission Creek Today** (`today.html`): the neighborhood home page, with the weather, the best time for a walk, recent sightings, and links to the other two.
+- **My neighborhood** (`today.html`): one map for your own block. Find your address and it names your neighborhood, then shows sunrise and sunset, an hourly rain chart, live rain radar, the street-tree canopy with trees in flower or fall color picked out, and wildlife neighbors photographed this week (iNaturalist). Tap anything and choose "Plan a walk to here" for a walking route, what you will pass, and short detours. `walk.html` now redirects here.
 
 ## Help improve it
 
