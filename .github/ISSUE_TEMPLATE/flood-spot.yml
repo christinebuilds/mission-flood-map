@@ -1,0 +1,27 @@
+name: Suggest a spot that floods
+description: No coding needed. Tell us where and link a news report or photo.
+title: "Flood spot: "
+labels: ["flood-spot"]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Where is it?
+      description: Cross streets or a block, e.g. "Wawona St and 15th Ave".
+    validations:
+      required: true
+  - type: input
+    id: when
+    attributes:
+      label: When did it flood?
+      description: A date or storm, if you know it.
+  - type: input
+    id: link
+    attributes:
+      label: Link to a news report
+      description: A link lets everyone check the source.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: A sentence or two. Please leave out names and home addresses.
