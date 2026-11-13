@@ -13,6 +13,10 @@ This is not an official city service or a warning system. In an emergency call 9
 - Recent flooding, drain and sewage-backup cases reported to SF311 (DataSF, refreshed nightly).
 - City storm drains, with a rule-of-thumb flag for the ones to check first.
 - Neighbor reports: "water here", "I cleared this drain", "needs clearing", with optional photos.
+- How much rain is expected in the next hour and the next 24 hours (Open-Meteo, with the Weather Service as fallback).
+- A log for each storm drain of when neighbors cleared it, with a way to thank them; and a "the water is gone" button on water reports.
+- An address box and "Use my location" to open the map on your own block. The spot is remembered in your browser only.
+- A form for bugs and ideas, read daily.
 - Weather alerts and rain chance (National Weather Service), next high tide (NOAA), and rain radar.
 
 ## Three pages
