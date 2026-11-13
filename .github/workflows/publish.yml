@@ -18,7 +18,7 @@ jobs:
           TOKEN: ${{ github.token }}
         run: |
           mkdir out
-          cp -r index.html data vendor out/
+          cp -r index.html cities vendor out/
           touch out/.nojekyll
           cd out
           git init -q -b gh-pages

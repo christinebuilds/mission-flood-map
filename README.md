@@ -18,8 +18,8 @@ This is not an official city service or a warning system. In an emergency call 9
 
 ## Help improve it
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Adding a spot in your neighborhood takes one small edit to `data/past-storms.json`, or you can fill in an issue form with no coding at all.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Adding a spot in your neighborhood takes one small edit to `cities/sf/past-storms.json`, or you can fill in an issue form with no coding at all.
 
 ## How it is built
 
-One static page (`index.html`) with Leaflet, published with GitHub Pages. Neighbor reports are stored in Supabase; notes and photos are checked automatically before they appear.
+One static engine page (`index.html`) with Leaflet, plus one settings folder per city under `cities/`, published with GitHub Pages. Neighbor reports are stored in Supabase; notes and photos are checked automatically before they appear.
