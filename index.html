@@ -162,6 +162,7 @@ button.act[aria-pressed="true"] { background: #1d6a4f; border-color: #1d6a4f; co
 .kchip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: #fff; border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; }
 .kchip .nsw { border-radius: 50%; }
 .radarkey .ramp { display: block; width: 150px; height: 9px; border-radius: 3px; background: linear-gradient(90deg, #04e9e7, #02fd02, #01c501, #fdf802, #fd9500, #fd0000, #bc0000); }
+.radarkey .radarnote { display: block; max-width: 170px; font-size: 11px; line-height: 1.35; margin-top: 4px; color: #33444d; }
 .radarkey .rampw { display: flex; justify-content: space-between; width: 150px; font-size: 11px; line-height: 1.4; }
 /* ---- compact pop-up cards ---- */
 .leaflet-interactive:focus { outline: none; }
@@ -429,7 +430,7 @@ button.fbbtn { display: inline-flex; align-items: center; gap: 4px; }
 // Phones: keep pop-ups inside the map (scroll inside them if long) instead of running off the screen.
 L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 0.38)), autoPanPadding: [8, 8], keepInView: false });
 // The time this copy of the page was built. The footer shows it, and the page checks version.txt for a newer one.
-var BUILD = "2026-11-13 10:56 PT";
+var BUILD = "2026-11-13 13:48 PT";
 (function () {
   var v = document.getElementById("ver"); if (v) v.textContent = BUILD;
   fetch("version.txt?ts=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) {
@@ -1348,13 +1349,35 @@ var BUILD = "2026-11-13 10:56 PT";
   }
 
   // ---------- rain radar: off until asked for, with a key, and a nudge to zoom out ----------
-  var radar = L.tileLayer("https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png", { opacity: 0.4, maxZoom: 19, maxNativeZoom: 10, attribution: "Radar: NWS NEXRAD via Iowa Environmental Mesonet" });
+  var radar = L.tileLayer("https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png", { opacity: 0.65, maxZoom: 19, maxNativeZoom: 10, crossOrigin: "anonymous", attribution: "Radar: NWS NEXRAD via Iowa Environmental Mesonet" });
   var radarKey = L.control({ position: "bottomright" });
   radarKey.onAdd = function () {
     var d = L.DomUtil.create("div", "legend radarkey");
-    d.innerHTML = '<b>Rain radar, live</b><span class="ramp"></span><span class="rampw"><span>light</span><span>moderate</span><span>heavy</span></span>';
+    d.innerHTML = '<b>Rain radar, live</b><span class="ramp"></span><span class="rampw"><span>light</span><span>moderate</span><span>heavy</span></span><span class="radarnote" id="radarNote">Loading radar…</span>';
     return d;
   };
+  // An empty radar looks broken, so say what it shows: rain in view, none, or that it did not load.
+  var radarErr = 0;
+  radar.on("loading", function () { radarErr = 0; setRadarNote("Loading radar…"); });
+  radar.on("tileerror", function () { radarErr++; });
+  radar.on("load", function () {
+    if (radarErr) { setRadarNote("Radar didn't load. Try again in a few minutes."); return; }
+    var c = document.createElement("canvas"), g = c.getContext("2d"), wet = 0, seen = 0;
+    c.width = c.height = 64;
+    for (var k in radar._tiles) {
+      var t = radar._tiles[k]; if (!t.loaded || !t.el || !t.el.naturalWidth || !t.current) continue;
+      if (radar._keyToBounds && !map.getBounds().intersects(radar._keyToBounds(k))) continue;
+      seen++;
+      try {
+        g.clearRect(0, 0, 64, 64); g.drawImage(t.el, 0, 0, 64, 64);
+        var d = g.getImageData(0, 0, 64, 64).data;
+        for (var i = 3; i < d.length; i += 4) if (d[i] > 20) { wet++; break; }
+      } catch (x) { setRadarNote(""); return; }
+    }
+    if (!seen) return;
+    setRadarNote(wet ? "Updated every 5 minutes." : "No rain showing on radar right now. Light drizzle and fog often don't show up.");
+  });
+  function setRadarNote(t) { var n = document.getElementById("radarNote"); if (n) { n.textContent = t; n.hidden = !t; } }
   function syncRadar() {
     var on = chk("tRadar");
     layerOn(radar, on); on ? radarKey.addTo(map) : radarKey.remove();
