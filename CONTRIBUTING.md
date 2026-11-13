@@ -1,6 +1,17 @@
-# How to help with the flood map
+# How to help with My Neighborhood Map
 
-This map is made by neighbors. You do not need permission to propose a change, and you do not need to be a programmer for most of them.
+My Neighborhood Map is a free, open-source map made by neighbors. It has two views on one map: **Nature & walks** (trees in season, wildlife sightings, the weather and a walk planner) and **Storms & flooding** (storm drains, flood reports, past flooding and the city's flood zone).
+
+You do not need permission to help, and you do not need to be a programmer. First-time contributors are very welcome.
+
+## Share an idea or report a bug
+
+- **On the map:** scroll to the bottom and tap **💬 Report a problem or share an idea**. It is anonymous and a volunteer reads every note.
+- **On GitHub:** [open an issue](https://github.com/christinebuilds/neighborhood-map/issues/new/choose). Say what you expected, what happened, and which phone or browser you used. A screenshot helps.
+
+## Bring the map to your city
+
+Everything local lives in one folder, `cities/<id>/`. See "Change the code" below, or open an issue and we will help you set it up.
 
 ## Add a spot that floods (no coding)
 
