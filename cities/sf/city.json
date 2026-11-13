@@ -113,14 +113,5 @@
   "street_trees": {
     "dataset": "tkzw-k3nq",
     "note": "SF street tree list (DataSF). Needs fields treeid, species ('Scientific :: Common'), onstreet, latitude, longitude."
-  },
-  "neighborhood": {
-    "name": "Mission Creek",
-    "center": [
-      37.7587,
-      -122.4148
-    ],
-    "zoom": 16,
-    "note": "Where today.html and walk.html open. A street corner, never a home address."
   }
 }
