@@ -349,8 +349,12 @@ button.act.alt { background: #fff; color: var(--ink); }
     });
     return el;
   }
+  // Redrawing removes every drain marker, which would close an open drain pop-up
+  // (opening one pans the map, and panning used to trigger a redraw). Wait until it closes.
+  var drainPopupOpen = false, drainRestylePending = false;
   function restyleDrains() {
     if (!drains.length) return;
+    if (drainPopupOpen) { drainRestylePending = true; return; }
     var hot = last311.filter(function (r) {
       var k = KINDS[r[F.kind]];
       return k && (k.role === "flooding" || k.role === "drain") && /open/i.test(r[F.status] || "") && !isNaN(parseFloat(r[F.lat]));
@@ -365,6 +369,11 @@ button.act.alt { background: #fff; color: var(--ink); }
       var pri = s.k !== "ok";
       var m = L.circleMarker(d.ll, { renderer: canvas, radius: pri ? 6 : 4, color: "#222", weight: pri ? 2 : 1, fillColor: DCOL[s.k], fillOpacity: pri ? 0.95 : 0.7 });
       m.bindPopup(function () { return drainPopup(d); }, { maxWidth: 260 });
+      m.on("popupopen", function () { drainPopupOpen = true; });
+      m.on("popupclose", function () {
+        drainPopupOpen = false;
+        if (drainRestylePending) { drainRestylePending = false; setTimeout(restyleDrains, 0); }
+      });
       m.addTo(pri ? drainsPri : drainsAll);
     });
     document.getElementById("nDrain").textContent = drains.length + " city storm drains loaded for this view: " + n.urgent + " check now, " + n.check + " check first, " + n.clear + " cleared in the last 14 days. Zoom in closer to see every drain.";
@@ -391,7 +400,8 @@ button.act.alt { background: #fff; color: var(--ink); }
     var b = map.getBounds().pad(0.2);
     var q = "$select=" + DR.id_field + "," + DR.type_field + "," + DR.location_field + "&$where=" + encodeURIComponent("within_box(" + DR.location_field + ", " + b.getNorth().toFixed(5) + ", " + b.getWest().toFixed(5) + ", " + b.getSouth().toFixed(5) + ", " + b.getEast().toFixed(5) + ")") + "&$limit=5000";
     fetchJson(HOSTS[0] + "/resource/" + DR.dataset + ".json?" + q).then(function (rows) {
-      if (drains.length > 8000) { drains = []; drainById = {}; }
+      if (drains.length > 8000 && !drainPopupOpen) { drains = []; drainById = {}; }
+      var before = drains.length;
       rows.forEach(function (r) {
         var c = r[DR.location_field] && r[DR.location_field].coordinates, id = String(r[DR.id_field] || "");
         if (!c || !id || drainById[id]) return;
@@ -400,7 +410,7 @@ button.act.alt { background: #fff; color: var(--ink); }
         var d = { id: id, type: r[DR.type_field], ll: ll, nearP: nearPast(ll) };
         drainById[id] = d; drains.push(d);
       });
-      restyleDrains();
+      if (drains.length !== before) restyleDrains();
     }).catch(function (e) { document.getElementById("nDrain").textContent = "Storm drains did not load (" + e.message + ")."; });
   }
 
@@ -643,6 +653,11 @@ button.act.alt { background: #fff; color: var(--ink); }
     return el;
   }
   var TR = CITY.street_trees || null;
+  // Draw order decides which dot a tap lands on: flood zone at the bottom, then trees, then drains on top.
+  function orderLayers() {
+    treeLayer.eachLayer(function (m) { if (m._map) m.bringToBack(); });
+    if (zoneLayer.bringToBack && map.hasLayer(zoneLayer)) zoneLayer.bringToBack();
+  }
   function loadTrees() {
     if (!TR) return;
     var b = map.getBounds().pad(0.1);
@@ -658,6 +673,7 @@ button.act.alt { background: #fff; color: var(--ink); }
         m.bindPopup(function () { return treePopup(r, sci, common, nat); }, { maxWidth: 260, minWidth: 220 });
         m.addTo(treeLayer);
       });
+      orderLayers();
       natureMsg();
     }).catch(function (e) { nNat.textContent = "Street trees did not load (" + e.message + ")."; });
   }
@@ -672,6 +688,7 @@ button.act.alt { background: #fff; color: var(--ink); }
     var z = map.getZoom(), w = document.getElementById("tWild").checked, t = document.getElementById("tTree").checked;
     (w && z >= 14) ? wildLayer.addTo(map) : map.removeLayer(wildLayer);
     (t && z >= 17) ? treeLayer.addTo(map) : map.removeLayer(treeLayer);
+    if (t && z >= 17) orderLayers();
     natureMsg();
     clearTimeout(natureTimer);
     natureTimer = setTimeout(function () { if (w && z >= 14) loadWild(); if (t && z >= 17) loadTrees(); }, 600);
