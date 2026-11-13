@@ -8,7 +8,7 @@ Open a new issue with the **Suggest a spot that floods** form. Give the cross st
 
 ## Add a spot yourself
 
-All past-storm areas live in one file: `data/past-storms.json`.
+Each city has its own folder under `cities/`. San Francisco's past-storm areas live in `cities/sf/past-storms.json`.
 
 1. Open that file on GitHub and tap the pencil icon. GitHub makes your own copy.
 2. Copy an existing area and change it. Each area has:
@@ -30,13 +30,19 @@ A check runs on every pull request and tells you in plain words if something is 
 
 ## Change the code
 
-The whole site is `index.html`, plus the map library in `vendor/`. There is no build step: open `index.html` through any local web server, e.g. `python3 -m http.server`, and edit.
+The site has two parts. `index.html` is the engine and is the same for every city. `cities/<id>/city.json` holds everything local: map bounds, data sources, links and wording. The map library is in `vendor/`. There is no build step: open `index.html` through any local web server, e.g. `python3 -m http.server`, and edit.
 
 Please keep these as they are unless you discuss it in an issue first:
 
 - The wording that says this is a volunteer map and not an official warning system.
 - The moderation flow. Notes and photos must stay hidden until the automatic check approves them.
 - The clear visual split between official data, past-storm estimates and live reports.
+
+## City settings
+
+`cities/sf/city.json` sets San Francisco's map bounds, weather point, tide station, open data sources (311 reports, storm drains, flood zone), links and the notes on reading the rain. Change a link or a note there, not in `index.html`.
+
+Other cities are on hold for now. The engine opens a city with `?city=<id>` and defaults to `sf`.
 
 ## Who can merge
 
