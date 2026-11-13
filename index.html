@@ -35,6 +35,8 @@ a { color: var(--link); }
 .when { font-weight: 600; }
 .legend { background: rgba(255,255,255,.96); color: #16252d; padding: 8px 10px; border-radius: 6px; font-size: 12px; line-height: 1.8; box-shadow: 0 1px 4px rgba(0,0,0,.3); max-width: 230px; }
 .legend b { display: block; }
+.legend details { background: none; border: 0; padding: 0; border-radius: 0; }
+.legend summary { font-size: 13px; }
 .lsw { display: inline-block; width: 16px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px; border: 2px dashed; }
 .ldot { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 50%; vertical-align: -2px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
 .leaflet-popup-content { font-size: 13px; line-height: 1.45; max-width: 260px; }
@@ -676,7 +678,8 @@ button.act.alt { background: #fff; color: var(--ink); }
   var legend = L.control({ position: "bottomleft" });
   legend.onAdd = function () {
     var d = L.DomUtil.create("div", "legend");
-    d.innerHTML = '<b>City model (official)</b>' +
+    L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+    d.innerHTML = '<details' + (window.innerWidth >= 700 ? " open" : "") + '><summary>Legend</summary><b>City model (official)</b>' +
       '<span class="lsw" style="background:rgba(94,53,177,.2);border:2px solid #5e35b1"></span>100-year storm flood zone<br>' +
       '<b>Estimated from past storms</b>' +
       '<span class="lsw" style="background:rgba(192,57,43,.3);border-color:#c0392b"></span>Repeat hotspot<br>' +
@@ -699,7 +702,7 @@ button.act.alt { background: #fff; color: var(--ink); }
       '<span class="ldot" style="background:#8a5a2b"></span>Fungus<br>' +
       '<span class="ldot" style="background:#c43b78"></span>Mammal, reptile or amphibian<br>' +
       '<span class="ldot" style="background:#2f8a4a"></span>Street tree<br>' +
-      '<span class="ldot" style="background:#17603a"></span>California native tree';
+      '<span class="ldot" style="background:#17603a"></span>California native tree</details>';
     return d;
   };
   legend.addTo(map);
