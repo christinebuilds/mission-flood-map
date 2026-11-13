@@ -77,14 +77,49 @@ button.act.alt { background: #fff; color: var(--ink); }
 /* Touch screens have no hover: a hover label would stick on top of the pop-up. */
 @media (hover: none) { .leaflet-tooltip:not(.pin-tip) { display: none; } }
 .leaflet-popup-content { overflow-wrap: anywhere; }
+#find { max-width: 900px; margin: 0 auto; padding: 2px 16px 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#find input { flex: 1 1 200px; min-width: 0; font-size: 16px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+#find button { font-size: 15px; font-weight: 600; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
+#find button.alt { background: #fff; color: var(--ink); }
+#findMsg { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--muted); }
+#findMsg:empty { display: none; }
+.chip.rain { background: #e3eefb; border-color: #1565c0; color: #0d3c78; font-weight: 700; font-size: 14px; }
+.hist { margin: 6px 0 0; padding-left: 16px; }
+.thx { font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 99px; border: 1px solid #2e7d32; background: #e8f5e9; color: #1b5e20; cursor: pointer; margin-top: 6px; }
+.thx:disabled { opacity: .7; cursor: default; }
+#cheer { position: fixed; inset: 0; z-index: 3000; background: rgba(22,37,45,.55); display: flex; align-items: center; justify-content: center; padding: 20px; overflow: hidden; }
+#cheer[hidden] { display: none; }
+#cheer .box { position: relative; background: #fff; border-radius: 16px; padding: 22px 20px 18px; max-width: 360px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+#cheer .big { font-size: 44px; line-height: 1; }
+#cheer h2 { font-size: 22px; margin: 8px 0 6px; }
+#cheer p { margin: 0 0 10px; font-size: 15px; }
+#cheer i { position: absolute; top: -12px; width: 9px; height: 14px; border-radius: 2px; opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  #cheer:not([hidden]) i { animation: drop 2.2s ease-in forwards; }
+  #cheer:not([hidden]) .big { animation: pop .5s cubic-bezier(.2,1.6,.4,1) both; }
+}
+@keyframes drop { 0% { opacity: 1; transform: translateY(0) rotate(0); } 100% { opacity: 0; transform: translateY(105vh) rotate(540deg); } }
+@keyframes pop { from { transform: scale(.3); } to { transform: scale(1); } }
+#sheet textarea, #fbSheet textarea { font: inherit; font-size: 16px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; min-height: 90px; }
+#fbSheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2000; background: #fff; border-top: 2px solid var(--ink); padding: 14px 16px 18px; box-shadow: 0 -4px 16px rgba(0,0,0,.25); max-height: 80vh; overflow: auto; }
+#fbSheet form { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+#fbSheet label { font-size: 15px; }
+#fbSheet .row { display: flex; gap: 10px; }
+button.linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--link); text-decoration: underline; cursor: pointer; }
 </style>
 </head>
 <body>
 <nav class="top"><a href="today.html">Mission Creek Today</a><a href="walk.html">Plan a walk</a><a href="./" aria-current="page">Storms &amp; flooding</a></nav>
 <header>
   <h1 id="hTitle">Neighborhood flood map</h1>
-  <p>A volunteer-made map for <span id="hCity">your city</span> storms. It is not an official city service. Purple is the <b>city's modeled flood zone</b>, dashed areas <b>flooded in past storms</b> per news reports, and dots are <b>recent reports</b>. Tap anything for details. In an emergency call 9-1-1.</p>
+  <p>Made by neighbors for <span id="hCity">your city</span> storms. Not an official service. Tap anything on the map for details. Emergency: 9-1-1.</p>
 </header>
+<form id="find" autocomplete="off">
+  <input type="text" id="addr" placeholder="Your address or cross streets" aria-label="Your address or cross streets" maxlength="120">
+  <button type="submit">Go</button>
+  <button type="button" class="alt" id="useLoc">Use my location</button>
+  <p id="findMsg" role="status"></p>
+</form>
 <div id="bar">
   <label><input type="checkbox" id="tZone" checked><span class="sw" style="border:2px solid #5e35b1;background:rgba(94,53,177,.2)"></span>City flood zone</label>
   <label><input type="checkbox" id="tHist" checked><span class="sw"></span>Past storms (news)</label>
@@ -94,10 +129,30 @@ button.act.alt { background: #fff; color: var(--ink); }
   <label><input type="checkbox" id="tRadar">Rain radar</label>
   <label>311: last <select id="days"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></label>
 </div>
-<div id="live"><span class="chip" id="cAlert">Weather alerts: loading…</span><span class="chip" id="cRain">Rain chance: loading…</span><span class="chip" id="cTide">Tide: loading…</span></div>
+<div id="live"><span class="chip rain" id="cAmt">Rain expected: loading…</span><span class="chip" id="cAlert">Weather alerts: loading…</span><span class="chip" id="cRain">Rain chance: loading…</span><span class="chip" id="cTide">Tide: loading…</span></div>
 <div id="map" role="application" aria-label="Map of flood risk and reports"></div>
 <div id="stat"><div class="msg" id="n311"></div><div class="msg" id="nDrain"></div><div class="msg" id="nRep"></div><div class="msg" id="tileMsg"></div></div>
 <div id="pickMsg" hidden>Tap the map where the water is</div>
+<div id="cheer" hidden role="dialog" aria-labelledby="cheerT">
+  <div class="box">
+    <div class="big" aria-hidden="true">💧</div>
+    <h2 id="cheerT">Thank you!</h2>
+    <p id="cheerA"></p>
+    <p class="small" id="cheerB"></p>
+    <button class="act" type="button" id="cheerDone">Done</button>
+  </div>
+</div>
+<div id="fbSheet" hidden>
+  <form id="fb">
+    <h2 style="margin:0">Tell the map's volunteers</h2>
+    <label><input type="radio" name="fbKind" value="bug" checked> Something isn't working</label>
+    <label><input type="radio" name="fbKind" value="idea"> I have an idea</label>
+    <textarea id="fbBody" maxlength="1000" placeholder="What happened, or what would help?" aria-label="Your message" required></textarea>
+    <p class="small" style="margin:0">Anonymous. Please leave out names, phone numbers and home addresses. For flooding right now, use Report water or call 3-1-1.</p>
+    <div class="row"><button class="act" type="submit" id="fbGo">Send</button><button class="act alt" type="button" id="fbCancel">Cancel</button></div>
+    <p class="small" id="fbMsg" style="margin:0"></p>
+  </form>
+</div>
 <div id="sheet" hidden>
   <form id="rf">
     <h2 id="rfTitle" style="margin:0">Report</h2>
@@ -119,7 +174,7 @@ button.act.alt { background: #fff; color: var(--ink); }
       <li><b>311 reports (solid dots):</b> blue is flooding, teal a storm drain needing maintenance, purple a sewage backup. Pale means the case is closed. <span id="r311Note"></span></li>
       <li><b>Storm drains:</b> pink means check now (a neighbor flagged it, or an open 311 case is within 60 m). Amber means check first (in the flood zone or a past-flood area). Green was cleared by a neighbor in the last 14 days. This is the map's own rule of thumb, not a city assessment. Tap a drain to mark it cleared or flag it. To adopt one officially: <a id="adoptLink" href="#">the city's adopt-a-drain program</a>.</li>
       <li><b>Neighbor reports (cyan):</b> "water here" posts from the last 48 hours. Unverified.</li>
-      <li><b>Chips above the map:</b> weather alerts, rain chance and the next high tide. Heavy rain near high tide drains slowest.</li>
+      <li><b>Chips above the map:</b> how much rain is expected (Open-Meteo forecast), weather alerts, rain chance and the next high tide. Heavy rain near high tide drains slowest.</li>
       <li>Shapes are hand-drawn to within a block or two. No shading does not mean a street is safe.</li>
     </ul>
   </details>
@@ -133,7 +188,7 @@ button.act.alt { background: #fff; color: var(--ink); }
     <div id="list" style="display:flex;flex-direction:column;gap:10px"></div>
   </details>
   <p class="small" id="cityLinks" style="margin:0"></p>
-  <p class="small" style="margin:0">Made by neighbors, not the city. <a href="https://github.com/christinebuilds/mission-flood-map/blob/main/CONTRIBUTING.md">Add your neighborhood or fix something</a>.</p>
+  <p class="small" style="margin:0">Made by neighbors, not the city. <button type="button" class="linkish" id="fbOpen">Report a problem or share an idea</button> · <a href="https://github.com/christinebuilds/mission-flood-map/blob/main/CONTRIBUTING.md">Help build it</a>. Address search by OpenStreetMap; the page remembers your spot in this browser only.</p>
 </main>
 
 <script src="vendor/leaflet.js"></script>
@@ -349,12 +404,50 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
     el.innerHTML = '<span class="tag" style="background:' + DCOL[s.k] + ';color:#fff">' + DLAB[s.k] + "</span><br><b>Storm drain</b> · " + esc(d.type || "") +
       "<br>" + esc(s.why) + (s.rep && s.rep.note ? "<br><i>" + esc(s.rep.note) + "</i>" : "") +
       (pu ? '<img class="pimg" alt="Photo posted by a neighbor" src="' + pu + '">' : "") +
+      drainHistory(d) +
       '<div class="pbtns"><button type="button" data-k="cleared">I cleared it</button><button type="button" class="alt" data-k="needs_clearing">Needs clearing</button></div>' +
       '<span class="small">Drain ' + esc(d.id) + (/^https:\/\//.test(DR.adopt_url || "") ? ' · <a href="' + esc(DR.adopt_url) + '" target="_blank" rel="noopener">' + esc(DR.adopt_label) + "</a>" : "") + "</span>";
-    Array.prototype.forEach.call(el.querySelectorAll("button"), function (b) {
+    Array.prototype.forEach.call(el.querySelectorAll(".pbtns button"), function (b) {
       b.addEventListener("click", function () { openForm(b.getAttribute("data-k"), d.ll, d.id); });
     });
+    wireThanks(el);
     return el;
+  }
+  // The log for one drain: every "cleared" and "needs clearing" post from the last 120 days.
+  function drainHistory(d) {
+    var rows = reports.filter(function (r) { return r.drain_id === d.id && (r.kind === "cleared" || r.kind === "needs_clearing"); });
+    var cleared = rows.filter(function (r) { return r.kind === "cleared"; });
+    if (!rows.length) return '<br><span class="small">No neighbor has logged clearing this drain yet.</span>';
+    var h = "<br><b>Log</b>: cleared " + cleared.length + (cleared.length === 1 ? " time" : " times") + " in the last 120 days." + '<ul class="hist">';
+    rows.slice(0, 4).forEach(function (r) {
+      var n = thanksCount[r.id] || 0;
+      h += "<li>" + (r.kind === "cleared" ? "Cleared " : "Flagged as needing clearing ") + esc(ago(r.created_at)) + (r.kind === "cleared" && n ? " · " + n + (n === 1 ? " thank-you" : " thank-yous") : "") + "</li>";
+    });
+    h += "</ul>";
+    if (cleared.length) h += thanksButton(cleared[0]);
+    return h;
+  }
+  // ---- Thanks: one per browser per report
+  var thanksCount = {};
+  function store(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
+  function deviceId() { var id = store("fm_device"); if (!/^[a-f0-9-]{36}$/.test(id || "")) { id = uuid(); store("fm_device", id); } return id; }
+  function thanksButton(r) {
+    var mine = (store("fm_thanked") || []).indexOf(r.id) >= 0, n = thanksCount[r.id] || 0;
+    return '<button type="button" class="thx" data-thx="' + esc(r.id) + '"' + (mine ? " disabled" : "") + ">" + (mine ? "You thanked this neighbor" : "Say thanks to the neighbor who cleared it") + (n ? " · " + n : "") + "</button>";
+  }
+  function wireThanks(el) {
+    Array.prototype.forEach.call(el.querySelectorAll("[data-thx]"), function (b) {
+      b.addEventListener("click", function () {
+        var id = b.getAttribute("data-thx"); b.disabled = true;
+        sb("/rest/v1/thanks", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ report_id: id, device: deviceId() }) })
+          .then(function (r) {
+            if (!r.ok && r.status !== 409) throw new Error("HTTP " + r.status);
+            var t = store("fm_thanked") || []; if (t.indexOf(id) < 0) t.push(id); store("fm_thanked", t.slice(-500));
+            if (r.ok) thanksCount[id] = (thanksCount[id] || 0) + 1;
+            b.textContent = "Thanks sent · " + (thanksCount[id] || 1);
+          }).catch(function () { b.disabled = false; b.textContent = "Could not send thanks. Tap to try again."; });
+      });
+    });
   }
   // Redrawing removes every drain marker, which would close an open drain pop-up
   // (opening one pans the map, and panning used to trigger a redraw). Wait until it closes.
@@ -470,21 +563,42 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
 
   // ================= Neighbor reports =================
   var repLayer = L.layerGroup().addTo(map);
+  function postReport(body) {
+    return sb("/rest/v1/reports", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(body) })
+      .then(function (r) { if (!r.ok) return r.text().then(function (x) { throw new Error("HTTP " + r.status + " " + x.slice(0, 120)); }); return r; });
+  }
   function loadReports() {
+    sb("/rest/v1/thanks_counts?select=report_id,n").then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) { thanksCount = {}; rows.forEach(function (t) { thanksCount[t.report_id] = t.n; }); }).catch(function () {});
     sb("/rest/v1/reports_public?select=id,created_at,kind,drain_id,lat,lon,note,photo_path&order=created_at.desc&limit=1000")
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(function (rows) {
         reports = rows; latestByDrain = {};
-        rows.forEach(function (r) { if (r.drain_id && !latestByDrain[r.drain_id]) latestByDrain[r.drain_id] = r; });
+        rows.forEach(function (r) { if (r.drain_id && !latestByDrain[r.drain_id] && (r.kind === "cleared" || r.kind === "needs_clearing")) latestByDrain[r.drain_id] = r; });
+        var gone = rows.filter(function (r) { return r.kind === "water_gone"; });
         repLayer.clearLayers();
         var nW = 0;
         rows.forEach(function (r) {
           if (r.kind !== "water" || Date.now() - new Date(r.created_at).getTime() > 48 * 36e5) return;
+          // A later "water is gone" post within 40 m clears this one off the map.
+          if (gone.some(function (g) { return g.created_at > r.created_at && distM([g.lat, g.lon], [r.lat, r.lon]) <= 40; })) return;
           nW++;
           var pu = photoUrl(r.photo_path);
           L.circleMarker([r.lat, r.lon], { radius: 10, color: "#004d5a", weight: 3, fillColor: "#00bcd4", fillOpacity: 0.9 })
-            .bindPopup('<span class="tag" style="background:#00bcd4;color:#00323b">NEIGHBOR REPORT · UNVERIFIED</span><br><b>Water here</b><br>Posted ' + esc(ago(r.created_at)) +
-              (r.note ? "<br><i>" + esc(r.note) + "</i>" : "") + (pu ? '<img class="pimg" alt="Photo posted by a neighbor" src="' + pu + '">' : ""), { maxWidth: 260 })
+            .bindPopup(function () {
+              var el = document.createElement("div");
+              el.innerHTML = '<span class="tag" style="background:#00bcd4;color:#00323b">NEIGHBOR REPORT · UNVERIFIED</span><br><b>Water here</b><br>Posted ' + esc(ago(r.created_at)) +
+                (r.note ? "<br><i>" + esc(r.note) + "</i>" : "") + (pu ? '<img class="pimg" alt="Photo posted by a neighbor" src="' + pu + '">' : "") +
+                '<div class="pbtns"><button type="button">The water is gone</button></div><span class="small"></span>';
+              var b = el.querySelector("button"), msg = el.querySelector("span.small");
+              b.addEventListener("click", function () {
+                b.disabled = true; msg.textContent = "Posting…";
+                postReport({ kind: "water_gone", drain_id: null, lat: r.lat, lon: r.lon, note: null, photo_path: null })
+                  .then(function () { map.closePopup(); document.getElementById("nRep").textContent = "Thanks. Marked as gone."; loadReports(); })
+                  .catch(function (err) { b.disabled = false; msg.textContent = "Could not post: " + err.message; });
+              });
+              return el;
+            }, { maxWidth: 260 })
             .addTo(repLayer);
         });
         document.getElementById("nRep").textContent = "Neighbor reports, last 48 h: " + nW + ".";
@@ -542,9 +656,37 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
       if (!r.ok) return r.text().then(function (x) { throw new Error("HTTP " + r.status + " " + x.slice(0, 120)); });
       sheet.hidden = true;
       document.getElementById("nRep").textContent = "Posted. Notes and photos appear after an automatic check.";
+      if (cur.kind === "cleared") cheer();
       return sb("/functions/v1/moderate", { method: "POST" }).catch(function () {}).then(loadReports);
     }).catch(function (err) { go.disabled = false; rfMsg.textContent = "Could not post: " + err.message; });
   });
+  function cheer() {
+    var mine = (store("fm_cleared") || 0) + 1; store("fm_cleared", mine);
+    var month = reports.filter(function (r) { return r.kind === "cleared" && Date.now() - new Date(r.created_at).getTime() < 30 * 864e5; }).length + 1;
+    document.getElementById("cheerA").textContent = "You cleared a drain. Water on your block now has somewhere to go.";
+    document.getElementById("cheerB").textContent = (mine > 1 ? "That's " + mine + " drains you've cleared. " : "") + "Neighbors have logged " + month + (month === 1 ? " clearing" : " clearings") + " on this map in the last 30 days, and they can thank you from the drain's dot.";
+    var box = document.getElementById("cheer"), cols = ["#00bcd4", "#1565c0", "#2e7d32", "#f9a825", "#d81b60"];
+    Array.prototype.forEach.call(box.querySelectorAll("i"), function (x) { x.remove(); });
+    for (var i = 0; i < 28; i++) { var c = document.createElement("i"); c.style.left = (Math.random() * 100) + "%"; c.style.background = cols[i % cols.length]; c.style.animationDelay = (Math.random() * 0.6) + "s"; box.appendChild(c); }
+    box.hidden = false; document.getElementById("cheerDone").focus();
+  }
+  document.getElementById("cheerDone").addEventListener("click", function () { document.getElementById("cheer").hidden = true; });
+
+  // ---- Bugs and ideas
+  var fbSheet = document.getElementById("fbSheet"), fbMsg = document.getElementById("fbMsg");
+  document.getElementById("fbOpen").addEventListener("click", function () { fbMsg.textContent = ""; document.getElementById("fbGo").disabled = false; fbSheet.hidden = false; document.getElementById("fbBody").focus(); });
+  document.getElementById("fbCancel").addEventListener("click", function () { fbSheet.hidden = true; });
+  if (location.hash === "#feedback") fbSheet.hidden = false;
+  document.getElementById("fb").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var body = document.getElementById("fbBody").value.trim(), kind = document.querySelector('input[name="fbKind"]:checked').value, go = document.getElementById("fbGo");
+    if (body.length < 3) { fbMsg.textContent = "Add a few words first."; return; }
+    go.disabled = true; fbMsg.textContent = "Sending…";
+    sb("/rest/v1/feedback", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ kind: kind, body: body, page: "flood" }) })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); document.getElementById("fbBody").value = ""; fbMsg.textContent = "Sent. Thank you. A volunteer reads these every day."; setTimeout(function () { fbSheet.hidden = true; }, 1800); })
+      .catch(function (err) { go.disabled = false; fbMsg.textContent = "Could not send: " + err.message; });
+  });
+
   var pickMsg = document.getElementById("pickMsg");
   var repBtn = L.control({ position: "topright" });
   repBtn.onAdd = function () {
@@ -563,6 +705,27 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
 
   // ================= Live conditions =================
   var radar = L.tileLayer("https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png", { opacity: 0.6, maxZoom: 19, attribution: "Radar: NWS NEXRAD via Iowa Environmental Mesonet" });
+  // How much rain: next hour and next 24 hours. Open-Meteo gives hourly amounts; the Weather Service is the fallback.
+  function inches(x) { return x < 0.005 ? "none" : (x < 0.1 ? x.toFixed(2) : x.toFixed(1)) + " in"; }
+  function loadRain() {
+    var cM = document.getElementById("cAmt"), wp = CITY.weather_point;
+    fetchJson("https://api.open-meteo.com/v1/forecast?latitude=" + wp[0] + "&longitude=" + wp[1] + "&hourly=precipitation&minutely_15=precipitation&forecast_hours=24&forecast_minutely_15=4&precipitation_unit=inch&timezone=auto").then(function (j) {
+      function sum(a) { return (a || []).reduce(function (t, v) { return t + (v || 0); }, 0); }
+      var h24 = sum(j.hourly && j.hourly.precipitation), q = j.minutely_15 && j.minutely_15.precipitation;
+      var h1 = q && q.length ? sum(q) : ((j.hourly && j.hourly.precipitation) || [0])[0] || 0;
+      cM.textContent = "Rain expected · next hour: " + inches(h1) + " · next 24 hours: " + inches(h24);
+    }).catch(function () {
+      return fetchJson("https://api.weather.gov/points/" + wp.join(",")).then(function (j) { return fetchJson(j.properties.forecastGridData); }).then(function (j) {
+        var now = Date.now(), end = now + 864e5, mm = 0;
+        ((j.properties.quantitativePrecipitation || {}).values || []).forEach(function (v) {
+          var parts = v.validTime.split("/"), t0 = new Date(parts[0]).getTime(), h = parseInt((/PT(\d+)H/.exec(parts[1]) || [0, 1])[1], 10), t1 = t0 + h * 36e5;
+          var overlap = Math.max(0, Math.min(t1, end) - Math.max(t0, now));
+          mm += (v.value || 0) * overlap / (t1 - t0);
+        });
+        cM.textContent = "Rain expected · next 24 hours: " + inches(mm / 25.4) + " (hourly amount unavailable right now)";
+      });
+    }).catch(function () { cM.textContent = "Rain amounts unavailable"; });
+  }
   function loadLive() {
     var cA = document.getElementById("cAlert"), cR = document.getElementById("cRain"), cT = document.getElementById("cTide");
     fetchJson("https://api.weather.gov/alerts/active?point=" + CITY.weather_point.join(",")).then(function (j) {
@@ -590,8 +753,8 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
   document.getElementById("tZone").addEventListener("change", function (e) { if (e.target.checked) { zoneLayer.addTo(map); zoneLayer.bringToBack(); } else map.removeLayer(zoneLayer); });
   document.getElementById("tRep").addEventListener("change", function (e) { e.target.checked ? repLayer.addTo(map) : map.removeLayer(repLayer); });
   document.getElementById("tRadar").addEventListener("change", function (e) { e.target.checked ? radar.addTo(map) : map.removeLayer(radar); });
-  loadZone(); loadReports(); loadLive(); syncDrains();
-  setInterval(loadReports, 120000); setInterval(loadLive, 600000);
+  loadZone(); loadReports(); loadLive(); loadRain(); syncDrains();
+  setInterval(loadReports, 120000); setInterval(loadLive, 600000); setInterval(loadRain, 900000);
 
   // ---- Toggles
   document.getElementById("tHist").addEventListener("change", function (e) { e.target.checked ? hist.addTo(map) : map.removeLayer(hist); });
@@ -629,12 +792,47 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
     var b = L.DomUtil.create("button", "leaflet-bar");
     b.type = "button"; b.textContent = "Locate me";
     b.style.cssText = "background:#fff;color:#16252d;border:none;padding:6px 10px;font-size:13px;cursor:pointer;border-radius:4px";
-    L.DomEvent.on(b, "click", function (e) { L.DomEvent.stop(e); map.locate({ setView: true, maxZoom: 16 }); });
+    L.DomEvent.on(b, "click", function (e) { L.DomEvent.stop(e); locate(); });
     return b;
   };
   loc.addTo(map);
-  var you;
-  map.on("locationfound", function (e) { if (you) map.removeLayer(you); you = L.circleMarker(e.latlng, { radius: 7, color: "#fff", weight: 2, fillColor: "#16252d", fillOpacity: 1 }).addTo(map); });
+  var you, findMsg = document.getElementById("findMsg");
+  function inCity(ll) { return ll[0] >= CITY.bounds[0][0] && ll[0] <= CITY.bounds[1][0] && ll[1] >= CITY.bounds[0][1] && ll[1] <= CITY.bounds[1][1]; }
+  // Centre on a spot and remember it (rounded to about a block) in this browser only.
+  function goTo(ll, zoom) {
+    map.setView(ll, zoom || 17);
+    if (you) map.removeLayer(you);
+    you = L.circleMarker(ll, { radius: 7, color: "#fff", weight: 2, fillColor: "#16252d", fillOpacity: 1, interactive: false }).addTo(map);
+    store("fm_place", { lat: Math.round(ll[0] * 1000) / 1000, lon: Math.round(ll[1] * 1000) / 1000 });
+  }
+  function locate() {
+    if (!navigator.geolocation) { findMsg.textContent = "This browser can't share your location. Type your address or cross streets instead."; return; }
+    findMsg.textContent = "Finding you…";
+    map.locate({ setView: false, enableHighAccuracy: true, timeout: 10000 });
+  }
+  map.on("locationfound", function (e) {
+    var ll = [e.latlng.lat, e.latlng.lng];
+    if (!inCity(ll)) { findMsg.textContent = "You seem to be outside " + CITY.name + ", so the map stayed where it was."; return; }
+    findMsg.textContent = ""; goTo(ll, 17);
+  });
+  map.on("locationerror", function (e) {
+    findMsg.textContent = (e.code === 1 ? "Location is blocked for this page. Allow it in your browser settings, or" : "Couldn't find your location. Try again, or") + " type your address or cross streets instead.";
+  });
+  document.getElementById("useLoc").addEventListener("click", locate);
+  document.getElementById("find").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var q = document.getElementById("addr").value.trim(); if (q.length < 3) return;
+    findMsg.textContent = "Searching…";
+    var b = CITY.bounds, vb = [b[0][1], b[1][0], b[1][1], b[0][0]].join(",");
+    fetchJson("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&bounded=1&viewbox=" + vb + "&q=" + encodeURIComponent(q.replace(/\s*&\s*/g, " and "))).then(function (rows) {
+      var r = rows[0], ll = r && [parseFloat(r.lat), parseFloat(r.lon)];
+      if (!r || !inCity(ll)) { findMsg.textContent = "Couldn't find that in " + CITY.name + ". Try cross streets, like \"20th and Folsom\"."; return; }
+      findMsg.textContent = ""; goTo(ll, 17); document.getElementById("addr").blur();
+    }).catch(function () { findMsg.textContent = "Address search isn't answering right now. Try Use my location, or zoom in by hand."; });
+  });
+  var saved = store("fm_place");
+  if (saved && inCity([saved.lat, saved.lon])) goTo([saved.lat, saved.lon], 16);
+
 
   var tilesOk = false;
   function warn() {
