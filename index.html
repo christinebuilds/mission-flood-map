@@ -25,6 +25,11 @@ h2 { font-size: 18px; margin: 0 0 6px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
 .card li { font-size: 15px; margin-bottom: 4px; }
 .card ul { margin: 6px 0 0; padding-left: 20px; }
+details.fold { border-left: 1px solid var(--line); }
+details.fold > summary { font-size: 16px; }
+#stat { max-width: 900px; margin: 0 auto; padding: 8px 16px 0; display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 13px; color: var(--muted); }
+#stat .msg { max-width: none; margin: 0; padding: 0; }
+#stat .msg:empty { display: none; }
 details { background: var(--card); border: 1px solid var(--line); border-left: 5px dashed var(--one); border-radius: 8px; padding: 10px 14px; }
 details.hot { border-left-color: var(--hot); }
 summary { cursor: pointer; font-weight: 600; }
@@ -85,11 +90,7 @@ button.act.alt { background: #fff; color: var(--ink); }
 </div>
 <div id="live"><span class="chip" id="cAlert">Weather alerts: loading…</span><span class="chip" id="cRain">Rain chance: loading…</span><span class="chip" id="cTide">Tide: loading…</span></div>
 <div id="map" role="application" aria-label="Map of flood risk and reports"></div>
-<div class="msg" id="n311"></div>
-<div class="msg" id="nDrain"></div>
-<div class="msg" id="nRep"></div>
-<div class="msg" id="nNature"></div>
-<div class="msg" id="tileMsg"></div>
+<div id="stat"><div class="msg" id="n311"></div><div class="msg" id="nDrain"></div><div class="msg" id="nRep"></div><div class="msg" id="nNature"></div><div class="msg" id="tileMsg"></div></div>
 <div id="pickMsg" hidden>Tap the map where the water is</div>
 <div id="sheet" hidden>
   <form id="rf">
@@ -104,31 +105,31 @@ button.act.alt { background: #fff; color: var(--ink); }
 </div>
 
 <main>
-  <section class="card">
-    <h2>What each layer means</h2>
+  <details class="fold">
+    <summary>What the colors mean</summary>
     <ul>
       <li><b>City flood zone (purple):</b> <span id="zoneNote"></span></li>
-      <li><b>Past storms (dashed shading):</b> intersections and streets that news reports say flooded before. These are estimates of where water tends to collect, not a record of this week. Red is a repeat hotspot; orange was reported once or twice.</li>
-      <li><b>311 reports (solid dots):</b> flooding-related cases people filed with the city in the window you pick. Blue is flooding, teal is a storm drain needing maintenance, purple is a sewage backup. Pale dots are closed cases. <span id="r311Note"></span></li>
-      <li><b>Storm drains:</b> city drain locations from the city's open data. Pink means check now (a neighbor flagged it, or an open 311 flooding or drain case is within 60 m). Amber means check first (inside the city flood zone, or in or next to a past-flood area). Green was cleared by a neighbor in the last 14 days. These rankings are this map's own rule of thumb, not a city assessment. Tap a drain to mark it cleared or flag it, with a photo. To adopt one officially, go to <a id="adoptLink" href="#">the city's adopt-a-drain program</a>.</li>
-      <li><b>Neighbor reports (cyan):</b> "water here" posts from people using this map in the last 48 hours. Unverified.</li>
-      <li><b>Wildlife seen (white-ringed dots):</b> plants, birds, insects, fungi and other wildlife that people photographed and posted to <a href="https://www.inaturalist.org">iNaturalist</a> in the last 30 days. Tap a dot for the photo, the name and a short description. Zoom in to a neighborhood to load them. Only sightings whose photographers allow reuse are shown, with credit.</li>
-      <li><b>Street trees (green):</b> the city's street tree list from its open data. Dark green marks California native species, which feed far more insects and birds. Zoom in to street level to see them, and tap one for a photo of the species. Trees and their leaves are also why drains clog: the leafiest blocks are the ones to check before rain.</li>
-      <li><b>Chips above the map:</b> National Weather Service alerts and rain chance, and the next high tide from the nearest NOAA gauge. Heavy rain near high tide drains slowest.</li>
-      <li>Shapes are drawn by hand from the intersections articles name, so edges are accurate to a block or two. News coverage is uneven across neighborhoods, so a street with no shading is not necessarily safe.</li>
+      <li><b>Past storms (dashed):</b> places news reports say flooded before. Red is a repeat hotspot, orange was reported once or twice. An estimate, not a record of this week.</li>
+      <li><b>311 reports (solid dots):</b> blue is flooding, teal a storm drain needing maintenance, purple a sewage backup. Pale means the case is closed. <span id="r311Note"></span></li>
+      <li><b>Storm drains:</b> pink means check now (a neighbor flagged it, or an open 311 case is within 60 m). Amber means check first (in the flood zone or a past-flood area). Green was cleared by a neighbor in the last 14 days. This is the map's own rule of thumb, not a city assessment. Tap a drain to mark it cleared or flag it. To adopt one officially: <a id="adoptLink" href="#">the city's adopt-a-drain program</a>.</li>
+      <li><b>Neighbor reports (cyan):</b> "water here" posts from the last 48 hours. Unverified.</li>
+      <li><b>Wildlife (white-ringed dots):</b> what people photographed and posted to <a href="https://www.inaturalist.org">iNaturalist</a> in the last 30 days. Tap for the photo and name.</li>
+      <li><b>Street trees (green):</b> the city's tree list. Dark green is a California native. Leafy blocks are the ones to check before rain.</li>
+      <li><b>Chips above the map:</b> weather alerts, rain chance and the next high tide. Heavy rain near high tide drains slowest.</li>
+      <li>Shapes are hand-drawn to within a block or two. No shading does not mean a street is safe.</li>
     </ul>
-  </section>
-  <section class="card">
-    <h2 id="rainTitle">Reading the rain</h2>
+  </details>
+  <details class="fold">
+    <summary id="rainTitle">Reading the rain</summary>
     <ul id="rainNotes"></ul>
-    <p class="small" style="margin-top:8px" id="cityLinks"></p>
-  </section>
-  <section>
-    <h2>Past-storm areas (from news reports)</h2>
-    <p class="small" style="margin:0 0 8px" id="pastNote"></p>
+  </details>
+  <details class="fold">
+    <summary>Places that flooded in past storms</summary>
+    <p class="small" style="margin:8px 0" id="pastNote"></p>
     <div id="list" style="display:flex;flex-direction:column;gap:10px"></div>
-  </section>
-  <p class="small">Made by neighbors, not the city. Want to add your neighborhood or fix something? See <a href="https://github.com/christinebuilds/mission-flood-map/blob/main/CONTRIBUTING.md">how to contribute</a>.</p>
+  </details>
+  <p class="small" id="cityLinks" style="margin:0"></p>
+  <p class="small" style="margin:0">Made by neighbors, not the city. <a href="https://github.com/christinebuilds/mission-flood-map/blob/main/CONTRIBUTING.md">Add your neighborhood or fix something</a>.</p>
 </main>
 
 <script src="vendor/leaflet.js"></script>
@@ -279,7 +280,7 @@ button.act.alt { background: #fff; color: var(--ink); }
         m.bindTooltip("311: " + k.label, { sticky: true });
         m.addTo(c311);
       });
-      nEl.textContent = counts.flooding + " flooding reports and " + counts.other + " drain or sewage-backup reports to " + R.name + " citywide, last " + days + (days === 1 ? " day" : " days") + "." + (asOf ? " City data as of " + fmt(asOf) + "; it refreshes overnight." : "");
+      nEl.textContent = R.name + ", last " + days + (days === 1 ? " day" : " days") + ": " + counts.flooding + " flooding, " + counts.other + " drain or sewage." + (asOf ? " Updated " + fmt(asOf) + "." : "");
     }).catch(function (e) {
       nEl.textContent = R.name + " reports did not load (" + e.message + ").";
     });
@@ -376,7 +377,7 @@ button.act.alt { background: #fff; color: var(--ink); }
       });
       m.addTo(pri ? drainsPri : drainsAll);
     });
-    document.getElementById("nDrain").textContent = drains.length + " city storm drains loaded for this view: " + n.urgent + " check now, " + n.check + " check first, " + n.clear + " cleared in the last 14 days. Zoom in closer to see every drain.";
+    document.getElementById("nDrain").textContent = "Drains in view: " + n.urgent + " check now, " + n.check + " check first, " + n.clear + " cleared.";
     showDrains();
   }
   function showDrains() {
@@ -388,7 +389,7 @@ button.act.alt { background: #fff; color: var(--ink); }
     var on = document.getElementById("tDrain").checked, z = map.getZoom();
     showDrains();
     if (!DR) { document.getElementById("nDrain").textContent = ""; return; }
-    if (z < 15) document.getElementById("nDrain").textContent = "Zoom in to a neighborhood to see storm drains.";
+    if (z < 15) document.getElementById("nDrain").textContent = "Zoom in to see storm drains.";
     else if (on) loadDrainsSoon();
   }
   var drainById = {}, drainTimer = null;
@@ -480,7 +481,7 @@ button.act.alt { background: #fff; color: var(--ink); }
               (r.note ? "<br><i>" + esc(r.note) + "</i>" : "") + (pu ? '<img class="pimg" alt="Photo posted by a neighbor" src="' + pu + '">' : ""), { maxWidth: 260 })
             .addTo(repLayer);
         });
-        document.getElementById("nRep").textContent = nW + ' neighbor "water here" reports in the last 48 hours. Use the Report water button on the map to add one.';
+        document.getElementById("nRep").textContent = "Neighbor reports, last 48 h: " + nW + ".";
         restyleDrains();
       }).catch(function (e) { document.getElementById("nRep").textContent = "Neighbor reports did not load (" + e.message + ")."; });
   }
@@ -680,9 +681,8 @@ button.act.alt { background: #fff; color: var(--ink); }
   function natureMsg() {
     var z = map.getZoom(), w = document.getElementById("tWild").checked, t = document.getElementById("tTree").checked;
     if (!w && !t) { nNat.textContent = ""; return; }
-    if (z < 14) { nNat.textContent = "Zoom in to a neighborhood to see wildlife sightings, and to street level for trees."; return; }
-    nNat.textContent = (w ? nWild + " wildlife sightings from the last 30 days loaded (iNaturalist). " : "") +
-      (t ? (z >= 17 ? nTree + " street trees loaded (DataSF)." : "Zoom in closer to see street trees.") : "");
+    if (z < 14) { nNat.textContent = "Zoom in for wildlife and trees."; return; }
+    nNat.textContent = "Nature loaded: " + [w ? nWild + (nWild === 1 ? " sighting" : " sightings") : "", t && z >= 17 ? nTree + (nTree === 1 ? " tree" : " trees") : ""].filter(Boolean).join(", ") + "." + (t && z < 17 ? " Zoom in closer for trees." : "");
   }
   function syncNature() {
     var z = map.getZoom(), w = document.getElementById("tWild").checked, t = document.getElementById("tTree").checked;
