@@ -73,6 +73,8 @@ button.act.alt { background: #fff; color: var(--ink); }
 .ncredit { font-size: 11px; color: #53686f; }
 .nabout { margin: 6px 0 0; }
 .tag.nat { background: #e3f1e6; color: #1e5a31; }
+#mapMsg { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 2000; background: #16252d; color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.35; width: max-content; max-width: 88vw; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
+.leaflet-control-layers-toggle, .leaflet-retina .leaflet-control-layers-toggle { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Cg fill='none' stroke='%2316252d' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M13 4 3 9.5 13 15l10-5.5z'/%3E%3Cpath d='M3 13.5 13 19l10-5.5M3 17.5 13 23l10-5.5'/%3E%3C/g%3E%3C/svg%3E"); background-size: 26px 26px; }
 #pickMsg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2000; background: #16252d; color: #fff; padding: 8px 14px; border-radius: 99px; font-size: 14px; }
 /* Touch screens have no hover: a hover label would stick on top of the pop-up. */
 @media (hover: none) { .leaflet-tooltip:not(.pin-tip) { display: none; } }
@@ -132,6 +134,7 @@ button.linkish { background: none; border: 0; padding: 0; font: inherit; color: 
 <div id="live"><span class="chip rain" id="cAmt">Rain expected: loading…</span><span class="chip" id="cAlert">Weather alerts: loading…</span><span class="chip" id="cRain">Rain chance: loading…</span><span class="chip" id="cTide">Tide: loading…</span></div>
 <div id="map" role="application" aria-label="Map of flood risk and reports"></div>
 <div id="stat"><div class="msg" id="n311"></div><div class="msg" id="nDrain"></div><div class="msg" id="nRep"></div><div class="msg" id="tileMsg"></div></div>
+<div id="mapMsg" role="status" hidden></div>
 <div id="pickMsg" hidden>Tap the map where the water is</div>
 <div id="cheer" hidden role="dialog" aria-labelledby="cheerT">
   <div class="box">
@@ -562,6 +565,7 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
   }
 
   // ================= Neighbor reports =================
+  map.createPane("reports").style.zIndex = 450;   // above the canvas that draws drains and the flood zone, which otherwise swallows taps
   var repLayer = L.layerGroup().addTo(map);
   function postReport(body) {
     return sb("/rest/v1/reports", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(body) })
@@ -584,7 +588,7 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
           if (gone.some(function (g) { return g.created_at > r.created_at && distM([g.lat, g.lon], [r.lat, r.lon]) <= 40; })) return;
           nW++;
           var pu = photoUrl(r.photo_path);
-          L.circleMarker([r.lat, r.lon], { radius: 10, color: "#004d5a", weight: 3, fillColor: "#00bcd4", fillOpacity: 0.9 })
+          L.circleMarker([r.lat, r.lon], { pane: "reports", bubblingMouseEvents: false, radius: 12, color: "#004d5a", weight: 3, fillColor: "#00bcd4", fillOpacity: 0.9 })
             .bindPopup(function () {
               var el = document.createElement("div");
               el.innerHTML = '<span class="tag" style="background:#00bcd4;color:#00323b">NEIGHBOR REPORT · UNVERIFIED</span><br><b>Water here</b><br>Posted ' + esc(ago(r.created_at)) +
@@ -805,19 +809,29 @@ L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 
     you = L.circleMarker(ll, { radius: 7, color: "#fff", weight: 2, fillColor: "#16252d", fillOpacity: 1, interactive: false }).addTo(map);
     store("fm_place", { lat: Math.round(ll[0] * 1000) / 1000, lon: Math.round(ll[1] * 1000) / 1000 });
   }
+  // Ask the browser directly, quick fix first, and say what happened right on the map.
+  function say(t, keep) { findMsg.textContent = t; var m = document.getElementById("mapMsg"); if (m) { m.textContent = t; m.hidden = !t; clearTimeout(say.t); if (t && !keep) say.t = setTimeout(function () { m.hidden = true; }, 9000); } }
   function locate() {
-    if (!navigator.geolocation) { findMsg.textContent = "This browser can't share your location. Type your address or cross streets instead."; return; }
-    findMsg.textContent = "Finding you…";
-    map.locate({ setView: false, enableHighAccuracy: true, timeout: 10000 });
+    if (!navigator.geolocation) { say("This browser can't share your location. Type your address or cross streets at the top instead."); return; }
+    if (!window.isSecureContext) { say("Location only works on a secure (https) page."); return; }
+    say("Finding you…", true);
+    var done = false;
+    function ok(p) {
+      if (done) return; done = true;
+      var ll = [p.coords.latitude, p.coords.longitude];
+      if (!inCity(ll)) { say("You seem to be outside " + CITY.name + ", so the map stayed where it was."); return; }
+      say(""); goTo(ll, 17);
+    }
+    function fail(e) {
+      if (done) return; done = true;
+      say(e.code === 1 ? "Location is turned off for this page or this app. Turn it on in your phone's settings for this browser, or type your address at the top."
+        : "Your phone didn't give a location in time. Try once more, or type your address at the top.");
+    }
+    navigator.geolocation.getCurrentPosition(ok, function (e) {
+      if (e.code === 1) return fail(e);
+      navigator.geolocation.getCurrentPosition(ok, fail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
   }
-  map.on("locationfound", function (e) {
-    var ll = [e.latlng.lat, e.latlng.lng];
-    if (!inCity(ll)) { findMsg.textContent = "You seem to be outside " + CITY.name + ", so the map stayed where it was."; return; }
-    findMsg.textContent = ""; goTo(ll, 17);
-  });
-  map.on("locationerror", function (e) {
-    findMsg.textContent = (e.code === 1 ? "Location is blocked for this page. Allow it in your browser settings, or" : "Couldn't find your location. Try again, or") + " type your address or cross streets instead.";
-  });
   document.getElementById("useLoc").addEventListener("click", locate);
   document.getElementById("find").addEventListener("submit", function (e) {
     e.preventDefault();

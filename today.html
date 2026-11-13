@@ -38,6 +38,7 @@ button.act[aria-pressed="true"] { background: var(--link); border-color: var(--l
 #ctl input[type=checkbox] { width: 20px; height: 20px; }
 .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
 #map { height: 64vh; min-height: 400px; width: 100%; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+#mapMsg { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 2000; background: #18261d; color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.35; width: max-content; max-width: 88vw; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
 #pickMsg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2000; background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 99px; font-size: 14px; white-space: nowrap; }
 main { padding-top: 12px; padding-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
 .msg { font-size: 13px; color: var(--muted); }
@@ -87,13 +88,14 @@ a { color: var(--link); }
 <div id="ctl">
   <button class="act" type="button" id="bPlan" aria-pressed="false">Plan a walk</button>
   <button class="act alt" type="button" id="bClear" hidden>Clear walk</button>
-  <label><input type="checkbox" id="tWild" checked><span class="sw" style="background:#d0581c;border-radius:50%"></span>Wildlife</label>
+  <label><input type="checkbox" id="tWild" checked><span class="sw" style="background:#d0581c;border-radius:50%;border:2px solid #18261d;width:16px;height:16px"></span>Wildlife</label>
   <label><input type="checkbox" id="tTree" checked><span class="sw" style="background:#3f9a56"></span>Trees</label>
-  <label><input type="checkbox" id="tSeason" checked><span class="sw" style="background:#e3a400"></span>In season</label>
+  <label><input type="checkbox" id="tSeason" checked><span class="sw" style="background:#e3a400;border-radius:50%"></span>In season</label>
   <label><input type="checkbox" id="tZone"><span class="sw" style="background:#5e35b1"></span>Flood zone</label>
   <label><input type="checkbox" id="tRadar" checked><span class="sw" style="background:#1565c0"></span>Rain radar</label>
 </div>
 <div id="map" role="application" aria-label="Map of your neighborhood: trees, wildlife sightings and rain radar"></div>
+<div id="mapMsg" role="status" hidden></div>
 <div id="pickMsg" hidden></div>
 
 <main>
@@ -147,7 +149,9 @@ L.Popup.mergeOptions({ maxHeight: Math.max(180, Math.round(window.innerHeight * 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
   var radar = L.tileLayer("https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png", { opacity: 0.55, maxZoom: 19, attribution: "Radar: NWS NEXRAD via Iowa Environmental Mesonet" }).addTo(map);
   document.getElementById("tRadar").addEventListener("change", function (e) { e.target.checked ? radar.addTo(map) : map.removeLayer(radar); });
-  var canvas = L.canvas({ padding: 0.3 });
+  map.createPane("zone").style.zIndex = 350; map.getPane("zone").style.pointerEvents = "none";
+  var canvas = L.canvas({ padding: 0.3, pane: "zone" });
+  map.createPane("wild").style.zIndex = 450;   // sightings always on top and tappable
 
   // ---------- distance helpers ----------
   function distM(a, b) { var cl = Math.cos(a[0] * Math.PI / 180), dx = (a[1] - b[1]) * cl * 111320, dy = (a[0] - b[0]) * 111320; return Math.sqrt(dx * dx + dy * dy); }
@@ -352,7 +356,8 @@ L.Popup.mergeOptions({ maxHeight: Math.max(180, Math.round(window.innerHeight * 
     var ll = o.location.split(",").map(parseFloat);
     if (isNaN(ll[0]) || isNaN(ll[1])) return;
     o.ll = ll; wild[o.id] = o;
-    var m = L.circleMarker(ll, { radius: 8, color: "#ffffff", weight: 2, fillColor: obsGroup(o)[1], fillOpacity: 0.95, bubblingMouseEvents: false });
+    var m = L.circleMarker(ll, { pane: "wild", radius: 10, color: "#18261d", weight: 3, fillColor: obsGroup(o)[1], fillOpacity: 1, bubblingMouseEvents: false });
+    m.on("click", function () { if (picking) { pickPoint(ll, obsName(o)); setTimeout(function () { map.closePopup(); }, 0); } });
     m.bindPopup(function () { return wildPopup(o); }, { maxWidth: 260, minWidth: 220 });
     m.bindTooltip(obsName(o) + " · " + (o.observed_on || ""), { sticky: true });
     o.marker = m; m.addTo(wildLayer);
@@ -453,22 +458,21 @@ L.Popup.mergeOptions({ maxHeight: Math.max(180, Math.round(window.innerHeight * 
       this._c.width = w * dpr; this._c.height = h * dpr; this._c.style.width = w + "px"; this._c.style.height = h + "px";
       var g = this._c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
       var z = m.getZoom(); if (z < 15) return;
-      var r = z >= 18 ? 6 : z >= 17 ? 4 : z >= 16 ? 2.4 : 1.5, showSeason = chk("tSeason"), showTrees = chk("tTree");
+      var r = z >= 18 ? 7 : z >= 17 ? 5 : z >= 16 ? 3.2 : 2, showSeason = chk("tSeason"), showTrees = chk("tTree");
       var later = [];
       for (var i = 0; i < trees.length; i++) {
         var t = trees[i], p = m.latLngToLayerPoint(t.ll), x = p.x - origin.x, y = p.y - origin.y;
         if (x < -8 || y < -8 || x > w + 8 || y > h + 8) continue;
         if (showSeason && t.season) { later.push([x, y, t]); continue; }
         if (!showTrees) continue;
-        g.fillStyle = t.nat ? "rgba(23,96,58,.9)" : "rgba(63,154,86,.38)";
+        g.fillStyle = t.nat ? "rgba(12,84,45,.95)" : "rgba(30,130,60,.62)";
         var rr = t.nat ? r * 1.3 : r;
         g.fillRect(x - rr, y - rr, rr * 2, rr * 2);
       }
       later.forEach(function (a) {   // showy trees on top, as a soft glow plus a dot
         var rr = Math.max(2.5, r * 1.1);
-        g.fillStyle = a[2].season[4]; g.globalAlpha = 0.25; g.beginPath(); g.arc(a[0], a[1], rr * 1.8, 0, 7); g.fill();
+        g.fillStyle = a[2].season[4]; g.globalAlpha = 0.3; g.beginPath(); g.arc(a[0], a[1], rr * 1.8, 0, 7); g.fill();
         g.globalAlpha = 1; g.beginPath(); g.arc(a[0], a[1], rr, 0, 7); g.fill();
-        g.lineWidth = 1; g.strokeStyle = "#fff"; g.stroke();
       });
     }
   });
@@ -527,7 +531,7 @@ L.Popup.mergeOptions({ maxHeight: Math.max(180, Math.round(window.innerHeight * 
   function syncNature() {
     var z = map.getZoom(), w = chk("tWild");
     (w && z >= 14) ? wildLayer.addTo(map) : map.removeLayer(wildLayer);
-    if (!walk.line) statusEl.textContent = z < 14 ? "Zoom in, or find your block above, to see trees and wildlife." : z < 15 ? "Dots are wildlife seen in the last 30 days. Zoom in one more step for trees." : "Green is the street-tree canopy; brighter dots are trees in season; ringed dots are wildlife. Tap anything.";
+    if (!walk.line) statusEl.textContent = z < 14 ? "Zoom in, or find your block above, to see trees and wildlife." : z < 15 ? "Dots are wildlife seen in the last 30 days. Zoom in one more step for trees." : "Green squares are street trees, colored dots are trees in season, and big dark-ringed circles are wildlife sightings. Tap any of them.";
     clearTimeout(natureTimer);
     natureTimer = setTimeout(function () {
       if (w && z >= 14) fetchObs(map.getBounds()).then(drawSeen).catch(function () {});
@@ -543,7 +547,7 @@ L.Popup.mergeOptions({ maxHeight: Math.max(180, Math.round(window.innerHeight * 
   function pin(ll, label, color) { return L.circleMarker(ll, { radius: 9, color: "#fff", weight: 3, fillColor: color, fillOpacity: 1, interactive: false }).bindTooltip(label, { permanent: true, direction: "top", offset: [0, -8], className: "pin-tip" }); }
   function setPick(n) {
     picking = n; pickMsg.hidden = !n; bPlan.setAttribute("aria-pressed", n ? "true" : "false");
-    pickMsg.textContent = n === 1 ? "Tap where you start" : n === 2 ? "Now tap where you're going" : n === 3 ? "Tap where you'll start from" : "";
+    pickMsg.textContent = n === 1 ? "Tap where you start" : n === 2 ? "Now tap where you're going, or a sighting" : n === 3 ? "Tap where you'll start from" : "";
   }
   bPlan.addEventListener("click", function () { if (picking) { setPick(0); return; } clearWalk(); if (place) { walk.start = [place.lat, place.lon]; pin(walk.start, "Start", "#18261d").addTo(routeLayer); setPick(2); } else setPick(1); });
   bClear.addEventListener("click", function () { clearWalk(); setPick(0); });
@@ -556,15 +560,18 @@ L.Popup.mergeOptions({ maxHeight: Math.max(180, Math.round(window.innerHeight * 
   }
   map.on("click", function (e) {
     var ll = [e.latlng.lat, e.latlng.lng];
-    if (picking === 1) { walk.start = ll; routeLayer.clearLayers(); pin(ll, "Start", "#18261d").addTo(routeLayer); setPick(2); return; }
-    if (picking === 2) { walk.end = ll; setPick(0); route(); return; }
-    if (picking === 3) { walk.start = ll; setPick(0); route(); return; }
-    if (map.getZoom() >= 16 && (chk("tTree") || chk("tSeason"))) {   // tap a tree
+    if (picking) { pickPoint(ll); return; }
+    if (map.getZoom() >= 15 && (chk("tTree") || chk("tSeason"))) {   // tap a tree
       var px = 40075016 * Math.cos(ll[0] * Math.PI / 180) / Math.pow(2, map.getZoom() + 8);
-      var t = nearestTree(ll, 16 * px, function (x) { return chk("tTree") || x.season; });
+      var t = nearestTree(ll, 22 * px, function (x) { return chk("tTree") || x.season; });
       if (t) L.popup({ maxWidth: 260, minWidth: 220 }).setLatLng(t.ll).setContent(treePopup(t)).openOn(map);
     }
   });
+  function pickPoint(ll, name) {
+    if (picking === 1) { walk.start = ll; routeLayer.clearLayers(); pin(ll, "Start", "#18261d").addTo(routeLayer); setPick(2); }
+    else if (picking === 2) { walk.end = ll; walk.endName = name; setPick(0); route(); }
+    else if (picking === 3) { walk.start = ll; setPick(0); route(); }
+  }
   function clearWalk() {
     walk = { start: null, end: null, vias: [], line: null, miles: 0, minutes: 0 };
     routeLayer.clearLayers(); bClear.hidden = true;
@@ -689,17 +696,29 @@ L.Popup.mergeOptions({ maxHeight: Math.max(180, Math.round(window.innerHeight * 
       if (n) { place.name = n; store("fm_place", place); titleFor(n); }
     }).catch(function () {});
   }
+  // Ask the browser directly, quick fix first, and say what happened right on the map.
+  function say(t, keep) { findMsg.textContent = t; var m = document.getElementById("mapMsg"); if (m) { m.textContent = t; m.hidden = !t; clearTimeout(say.t); if (t && !keep) say.t = setTimeout(function () { m.hidden = true; }, 9000); } }
   function locate() {
-    if (!navigator.geolocation) { findMsg.textContent = "This browser can't share your location. Type your address or cross streets instead."; return; }
-    findMsg.textContent = "Finding you…";
-    map.locate({ setView: false, enableHighAccuracy: true, timeout: 10000 });
+    if (!navigator.geolocation) { say("This browser can't share your location. Type your address or cross streets at the top instead."); return; }
+    if (!window.isSecureContext) { say("Location only works on a secure (https) page."); return; }
+    say("Finding you…", true);
+    var done = false;
+    function ok(p) {
+      if (done) return; done = true;
+      var ll = [p.coords.latitude, p.coords.longitude];
+      if (!inCity(ll)) { say("You seem to be outside " + CITY.name + ", so the map stayed where it was."); return; }
+      say(""); setPlace(ll, "", 16);
+    }
+    function fail(e) {
+      if (done) return; done = true;
+      say(e.code === 1 ? "Location is turned off for this page or this app. Turn it on in your phone's settings for this browser, or type your address at the top."
+        : "Your phone didn't give a location in time. Try once more, or type your address at the top.");
+    }
+    navigator.geolocation.getCurrentPosition(ok, function (e) {
+      if (e.code === 1) return fail(e);
+      navigator.geolocation.getCurrentPosition(ok, fail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
   }
-  map.on("locationfound", function (e) {
-    var ll = [e.latlng.lat, e.latlng.lng];
-    if (!inCity(ll)) { findMsg.textContent = "You seem to be outside " + CITY.name + ", so the map stayed where it was."; return; }
-    setPlace(ll, "", 16);
-  });
-  map.on("locationerror", function (e) { findMsg.textContent = (e.code === 1 ? "Location is blocked for this page. Allow it in your browser settings, or" : "Couldn't find your location. Try again, or") + " type your address or cross streets instead."; });
   document.getElementById("useLoc").addEventListener("click", locate);
   document.getElementById("find").addEventListener("submit", function (e) {
     e.preventDefault();
