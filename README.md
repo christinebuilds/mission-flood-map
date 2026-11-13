@@ -1,28 +1,24 @@
-# SF neighborhood flood map
+# My Neighborhood Map
 
-A volunteer-made map to help San Francisco neighbors get through storms: where water tends to collect, what has been reported, and which storm drains to check.
+My Neighborhood Map: an engine for neighborhood maps, one folder per city. San Francisco is the first city.
 
-**Open the map:** https://christinebuilds.github.io/mission-flood-map/
+It is one page with two views of your own block:
+
+- **Nature & walks** (the front door): find your address and the page names your neighborhood. A day strip shows sunrise, sunset, rain hour by hour, temperature and the best two hours for a walk. The map shows street trees (a density picture when zoomed out, single trees when zoomed in) and wildlife neighbors photographed nearby (iNaturalist). Tap a tree or sighting for a small card and "Walk here" for a walking route, what you will pass, and short detours. A seasonal walk (fall colors, blossom) paints the trees in season.
+- **Storms & flooding**: the city's flood zone, places that flooded in past storms (with sources), 311 flooding and drain cases, storm drains with a rule-of-thumb flag for which to check first, and neighbor reports ("water here", "I cleared this drain", "needs clearing", "the water is gone"). Each drain keeps a log of clearings and a way to thank the neighbor. Rain amounts, alerts, the next high tide and live rain radar sit alongside.
 
 This is not an official city service or a warning system. In an emergency call 9-1-1. Report flooding to the city at 3-1-1.
 
-## What it shows
+## Pages and links
 
-- The city's 100-year storm flood risk zone (SFPUC, via DataSF).
-- Places that flooded in past storms, from news reports, each with its source link.
-- Recent flooding, drain and sewage-backup cases reported to SF311 (DataSF, refreshed nightly).
-- City storm drains, with a rule-of-thumb flag for the ones to check first.
-- Neighbor reports: "water here", "I cleared this drain", "needs clearing", with optional photos.
-- How much rain is expected in the next hour and the next 24 hours (Open-Meteo, with the Weather Service as fallback).
-- A log for each storm drain of when neighbors cleared it, with a way to thank them; and a "the water is gone" button on water reports.
-- An address box and "Use my location" to open the map on your own block. The spot is remembered in your browser only.
-- A form for bugs and ideas, read daily.
-- Weather alerts and rain chance (National Weather Service), next high tide (NOAA), and rain radar.
+- `index.html` is the map. `#flood` opens the Storms & flooding view, `#walk` starts planning a walk, `#feedback` opens the bug and idea form.
+- `flood.html` is a short landing page titled "SF Flood Map", the link to share for flooding.
+- `today.html` and `walk.html` only redirect to the map, so old links keep working.
+- `version.txt` holds the build time. The page shows it in the footer and offers to update when a newer one is published.
 
-## Three pages
+## Cities
 
-- **Storms & flooding** (`index.html`, the main link): flood risk, reports and storm drains only.
-- **My neighborhood** (`today.html`): one map for your own block. Find your address and it names your neighborhood, then shows sunrise and sunset, an hourly rain chart, live rain radar, the street-tree canopy with trees in flower or fall color picked out, and wildlife neighbors photographed this week (iNaturalist). Tap anything and choose "Plan a walk to here" for a walking route, what you will pass, and short detours. `walk.html` now redirects here.
+Everything local lives in `cities/<id>/`: `city.json` (bounds, data sources, phone numbers, notes) and `past-storms.json`. The engine loads `cities/sf/` by default; add `?city=<id>` to the address to load another folder. San Francisco is the only city for now.
 
 ## Help improve it
 
@@ -30,4 +26,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Adding a spot in your neighborhood takes
 
 ## How it is built
 
-One static engine page (`index.html`) with Leaflet, plus one settings folder per city under `cities/`, published with GitHub Pages. Neighbor reports are stored in Supabase; notes and photos are checked automatically before they appear.
+One static engine page (`index.html`) with Leaflet and no build step, plus one settings folder per city under `cities/`, published with GitHub Pages. All links between pages are relative, so the site works under any repository name. Neighbor reports are stored in Supabase; notes and photos are checked automatically before they appear.
