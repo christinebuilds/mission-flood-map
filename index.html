@@ -105,6 +105,12 @@ button.act.alt { background: #fff; color: var(--ink); }
 @keyframes pop { from { transform: scale(.3); } to { transform: scale(1); } }
 #sheet textarea, #fbSheet textarea { font: inherit; font-size: 16px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; min-height: 90px; }
 #fbSheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2000; background: #fff; border-top: 2px solid var(--ink); padding: 14px 16px 18px; box-shadow: 0 -4px 16px rgba(0,0,0,.25); max-height: 80vh; overflow: auto; }
+#locSheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2100; background: #fff; border-top: 2px solid var(--ink); padding: 14px 16px 18px; box-shadow: 0 -4px 16px rgba(0,0,0,.25); max-height: 70vh; overflow: auto; }
+#locSheet > div { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+#locSheet h2 { font-size: 18px; margin: 0; }
+#locSheet ol { margin: 0; padding-left: 20px; font-size: 15px; }
+#locSheet ol li { margin-bottom: 4px; }
+#locSheet .row { display: flex; gap: 10px; flex-wrap: wrap; }
 #fbSheet form { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
 #fbSheet label { font-size: 15px; }
 #fbSheet .row { display: flex; gap: 10px; }
@@ -281,6 +287,19 @@ button.act[aria-pressed="true"] { background: #1d6a4f; border-color: #1d6a4f; co
     <button class="act" type="button" id="cheerDone">Done</button>
   </div>
 </div>
+<div id="locSheet" hidden role="dialog" aria-labelledby="locT">
+  <div>
+    <h2 id="locT">Location is turned off</h2>
+    <p class="small" style="margin:0">A web page can't open your settings for you, so here is where to look:</p>
+    <ol>
+      <li>Open your phone's <b>Settings</b> app.</li>
+      <li>Find the app you browse with (Safari, Chrome, or the app this link opened in) and tap <b>Location</b>.</li>
+      <li>Choose <b>While Using the App</b>, then come back here.</li>
+    </ol>
+    <p class="small" style="margin:0" id="locSafari">In Safari you can also tap <b>aA</b> in the address bar, then <b>Website Settings</b>, then <b>Location: Allow</b>.</p>
+    <div class="row"><button class="act" type="button" id="locRetry">Try again</button><button class="act alt" type="button" id="locType">Type my address</button><button class="act alt" type="button" id="locClose">Close</button></div>
+  </div>
+</div>
 <div id="fbSheet" hidden>
   <form id="fb">
     <h2 style="margin:0">Tell the map's volunteers</h2>
@@ -367,7 +386,7 @@ button.act[aria-pressed="true"] { background: #1d6a4f; border-color: #1d6a4f; co
 // Phones: keep pop-ups inside the map (scroll inside them if long) instead of running off the screen.
 L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 0.38)), autoPanPadding: [8, 8], keepInView: false });
 // The time this copy of the page was built. The footer shows it, and the page checks version.txt for a newer one.
-var BUILD = "2026-11-13 10:17 PT";
+var BUILD = "2026-11-13 11:05 PT";
 (function () {
   var v = document.getElementById("ver"); if (v) v.textContent = BUILD;
   fetch("version.txt?ts=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) {
@@ -996,6 +1015,7 @@ var BUILD = "2026-11-13 10:17 PT";
     var b = L.DomUtil.create("button", "leaflet-bar");
     b.type = "button"; b.textContent = "Locate me";
     b.style.cssText = "background:#fff;color:#16252d;border:none;padding:6px 10px;font-size:13px;cursor:pointer;border-radius:4px";
+    b.id = "locBtn";
     L.DomEvent.on(b, "click", function (e) { L.DomEvent.stop(e); NAT.locate(); });
     return b;
   };
@@ -1857,12 +1877,12 @@ var BUILD = "2026-11-13 10:17 PT";
       if (done) return; done = true;
       var ll = [p.coords.latitude, p.coords.longitude];
       if (!inCity(ll)) { say("You seem to be outside " + CITY.name + ", so the map stayed where it was."); return; }
-      say(""); setPlace(ll, "");
+      locBlocked(false); say(""); setPlace(ll, "");
     }
     function fail(e) {
       if (done) return; done = true;
-      say(e.code === 1 ? "Location is turned off for this page or this app. Turn it on in your phone's settings for this browser, or type your address at the top."
-        : "Your phone didn't give a location in time. Try once more, or type your address at the top.");
+      if (e.code === 1) { locBlocked(true); say(""); openLocHelp(); return; }
+      say("Your phone didn't give a location in time. Try once more, or type your address at the top.");
     }
     navigator.geolocation.getCurrentPosition(ok, function (e) {
       if (e.code === 1) return fail(e);
@@ -1870,6 +1890,34 @@ var BUILD = "2026-11-13 10:17 PT";
     }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
   }
   document.getElementById("useLoc").addEventListener("click", locate);
+  // When location is blocked, hide the map's "Locate me" (it can only fail) and explain how to turn it on.
+  // Remembered on this device; cleared by any successful fix or when the browser reports access again.
+  function locBlocked(v) {
+    if (v !== undefined) { try { v ? localStorage.setItem("fm_loc_blocked", "1") : localStorage.removeItem("fm_loc_blocked"); } catch (x) {} }
+    var on; try { on = localStorage.getItem("fm_loc_blocked") === "1"; } catch (x) { on = false; }
+    var b = document.getElementById("locBtn"); if (b) b.style.display = on ? "none" : "";
+    return on;
+  }
+  function checkPerm() {
+    try {
+      if (!navigator.permissions || !navigator.permissions.query) { locBlocked(); return; }
+      navigator.permissions.query({ name: "geolocation" }).then(function (st) {
+        if (st.state === "denied") locBlocked(true); else if (st.state === "granted") locBlocked(false); else locBlocked();
+      }, function () { locBlocked(); });
+    } catch (x) { locBlocked(); }
+  }
+  var locSheet = document.getElementById("locSheet");
+  function openLocHelp() {
+    document.getElementById("locSafari").hidden = !/Safari/.test(navigator.userAgent) || /CriOS|FxiOS|EdgiOS|FBAN|FBAV|Instagram|Line\//.test(navigator.userAgent);
+    locSheet.hidden = false; document.getElementById("locRetry").focus();
+  }
+  document.getElementById("locRetry").addEventListener("click", function () { locSheet.hidden = true; locate(); });
+  document.getElementById("locClose").addEventListener("click", function () { locSheet.hidden = true; });
+  document.getElementById("locType").addEventListener("click", function () {
+    locSheet.hidden = true; var f = document.getElementById("find"); f.hidden = false; f.scrollIntoView({ block: "center" }); document.getElementById("addr").focus();
+  });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) checkPerm(); });
+  checkPerm();
   document.getElementById("find").addEventListener("submit", function (e) {
     e.preventDefault();
     var q = document.getElementById("addr").value.trim(); if (q.length < 3) return;
