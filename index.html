@@ -9,6 +9,9 @@
 :root { --bg:#f4f6f7; --ink:#16252d; --muted:#53686f; --line:#d3dde1; --card:#fff; --hot:#c0392b; --one:#e08a1e; --c311:#1565c0; --link:#1d6a9f; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+nav.top { max-width: 900px; margin: 0 auto; padding: 10px 16px 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
+nav.top a { color: var(--link); text-decoration: none; padding: 4px 0; }
+nav.top a[aria-current] { color: var(--ink); font-weight: 700; border-bottom: 2px solid var(--ink); }
 header { padding: 14px 16px 8px; max-width: 900px; margin: 0 auto; }
 h1 { font-size: 22px; line-height: 1.2; margin: 0 0 4px; }
 header p { margin: 0; color: var(--muted); font-size: 14px; }
@@ -73,9 +76,10 @@ button.act.alt { background: #fff; color: var(--ink); }
 </style>
 </head>
 <body>
+<nav class="top"><a href="today.html">Mission Creek Today</a><a href="walk.html">Plan a walk</a><a href="./" aria-current="page">Storms &amp; flooding</a></nav>
 <header>
   <h1 id="hTitle">Neighborhood flood map</h1>
-  <p>A volunteer-made map for <span id="hCity">your city</span> storms. It is not an official city service. Purple is the <b>city's modeled flood zone</b>, dashed areas <b>flooded in past storms</b> per news reports, and dots are <b>recent reports</b>. Zoom in to see <b>wildlife neighbors have photographed</b> and <b>street trees</b>. Tap anything for details. In an emergency call 9-1-1.</p>
+  <p>A volunteer-made map for <span id="hCity">your city</span> storms. It is not an official city service. Purple is the <b>city's modeled flood zone</b>, dashed areas <b>flooded in past storms</b> per news reports, and dots are <b>recent reports</b>. Tap anything for details. In an emergency call 9-1-1.</p>
 </header>
 <div id="bar">
   <label><input type="checkbox" id="tZone" checked><span class="sw" style="border:2px solid #5e35b1;background:rgba(94,53,177,.2)"></span>City flood zone</label>
@@ -83,14 +87,12 @@ button.act.alt { background: #fff; color: var(--ink); }
   <label><input type="checkbox" id="t311" checked><span class="dt"></span>311 reports</label>
   <label><input type="checkbox" id="tDrain" checked><span class="ddot" style="background:#d81b60"></span>Storm drains</label>
   <label><input type="checkbox" id="tRep" checked><span class="ddot" style="background:#00bcd4"></span>Neighbor reports</label>
-  <label><input type="checkbox" id="tWild" checked><span class="ddot" style="background:#d0581c;border-color:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.4)"></span>Wildlife seen</label>
-  <label><input type="checkbox" id="tTree" checked><span class="ddot" style="background:#2f8a4a;border-color:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.4)"></span>Street trees</label>
   <label><input type="checkbox" id="tRadar">Rain radar</label>
   <label>311: last <select id="days"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></label>
 </div>
 <div id="live"><span class="chip" id="cAlert">Weather alerts: loading…</span><span class="chip" id="cRain">Rain chance: loading…</span><span class="chip" id="cTide">Tide: loading…</span></div>
 <div id="map" role="application" aria-label="Map of flood risk and reports"></div>
-<div id="stat"><div class="msg" id="n311"></div><div class="msg" id="nDrain"></div><div class="msg" id="nRep"></div><div class="msg" id="nNature"></div><div class="msg" id="tileMsg"></div></div>
+<div id="stat"><div class="msg" id="n311"></div><div class="msg" id="nDrain"></div><div class="msg" id="nRep"></div><div class="msg" id="tileMsg"></div></div>
 <div id="pickMsg" hidden>Tap the map where the water is</div>
 <div id="sheet" hidden>
   <form id="rf">
@@ -113,8 +115,6 @@ button.act.alt { background: #fff; color: var(--ink); }
       <li><b>311 reports (solid dots):</b> blue is flooding, teal a storm drain needing maintenance, purple a sewage backup. Pale means the case is closed. <span id="r311Note"></span></li>
       <li><b>Storm drains:</b> pink means check now (a neighbor flagged it, or an open 311 case is within 60 m). Amber means check first (in the flood zone or a past-flood area). Green was cleared by a neighbor in the last 14 days. This is the map's own rule of thumb, not a city assessment. Tap a drain to mark it cleared or flag it. To adopt one officially: <a id="adoptLink" href="#">the city's adopt-a-drain program</a>.</li>
       <li><b>Neighbor reports (cyan):</b> "water here" posts from the last 48 hours. Unverified.</li>
-      <li><b>Wildlife (white-ringed dots):</b> what people photographed and posted to <a href="https://www.inaturalist.org">iNaturalist</a> in the last 30 days. Tap for the photo and name.</li>
-      <li><b>Street trees (green):</b> the city's tree list. Dark green is a California native. Leafy blocks are the ones to check before rain.</li>
       <li><b>Chips above the map:</b> weather alerts, rain chance and the next high tide. Heavy rain near high tide drains slowest.</li>
       <li>Shapes are hand-drawn to within a block or two. No shading does not mean a street is safe.</li>
     </ul>
@@ -555,149 +555,6 @@ button.act.alt { background: #fff; color: var(--ink); }
     openForm("water", [e.latlng.lat, e.latlng.lng], null);
   });
 
-  // ================= Nature: wildlife sightings (iNaturalist) and street trees (DataSF) =================
-  var INAT = "https://api.inaturalist.org/v1";
-  var OPEN_LIC = ["cc0", "cc-by", "cc-by-nc", "cc-by-sa", "cc-by-nc-sa", "cc-by-nd", "cc-by-nc-nd"];
-  var GROUPS = {
-    Aves: ["Bird", "#d0581c"], Insecta: ["Insect", "#7b4bb8"], Arachnida: ["Spider or relative", "#7b4bb8"], Mollusca: ["Snail, slug or shellfish", "#7b4bb8"],
-    Animalia: ["Small animal", "#7b4bb8"], Plantae: ["Plant", "#8aa21c"], Fungi: ["Fungus", "#8a5a2b"], Mammalia: ["Mammal", "#c43b78"],
-    Reptilia: ["Reptile", "#c43b78"], Amphibia: ["Amphibian", "#c43b78"], Actinopterygii: ["Fish", "#7b4bb8"]
-  };
-  var NATIVE = ["Quercus agrifolia", "Quercus lobata", "Quercus kelloggii", "Quercus douglasii", "Quercus chrysolepis", "Quercus wislizeni", "Arbutus menziesii", "Aesculus californica",
-    "Umbellularia californica", "Platanus racemosa", "Heteromeles arbutifolia", "Cercis occidentalis", "Ceanothus", "Lyonothamnus floribundus", "Prunus ilicifolia", "Prunus lyonii",
-    "Acer macrophyllum", "Acer negundo", "Sequoia sempervirens", "Sequoiadendron giganteum", "Cupressus macrocarpa", "Hesperocyparis macrocarpa", "Pinus radiata", "Pinus muricata",
-    "Pinus sabiniana", "Juglans californica", "Juglans hindsii", "Washingtonia filifera", "Frangula californica", "Rhamnus californica", "Sambucus", "Garrya elliptica",
-    "Morella californica", "Myrica californica", "Alnus rhombifolia", "Alnus rubra", "Populus fremontii", "Populus trichocarpa", "Salix lasiolepis", "Calocedrus decurrens",
-    "Cercocarpus", "Fraxinus latifolia", "Cornus nuttallii", "Arctostaphylos", "Torreya californica", "Notholithocarpus densiflorus"];
-  var wildLayer = L.layerGroup(), treeLayer = L.layerGroup();
-  var wildSeen = {}, treeSeen = {}, taxonCache = {}, nWild = 0, nTree = 0, natureTimer = null;
-  var nNat = document.getElementById("nNature");
-
-  function plain(html, max) {
-    var t = (new DOMParser().parseFromString(String(html || ""), "text/html").body.textContent || "").replace(/\s+/g, " ").trim();
-    if (t.length <= max) return t;
-    var cut = t.slice(0, max), dot = cut.lastIndexOf(". ");
-    return dot > 80 ? cut.slice(0, dot + 1) : cut + "…";
-  }
-  function openPhoto(p) { return p && OPEN_LIC.indexOf(p.license_code || "") >= 0 ? p : null; }
-  // One species lookup per name, shared by every tree or sighting of that species.
-  function taxonInfo(key, url) {
-    if (!taxonCache[key]) {
-      taxonCache[key] = fetchJson(url).then(function (j) {
-        var t = (j.results || [])[0];
-        if (!t) return null;
-        return t.wikipedia_summary !== undefined ? t : fetchJson(INAT + "/taxa/" + t.id).then(function (k) { return (k.results || [])[0] || t; });
-      }).catch(function () { return null; });
-    }
-    return taxonCache[key];
-  }
-  function fillAbout(el, t, wantPhoto) {
-    if (!t) return;
-    var ph = wantPhoto ? openPhoto(t.default_photo) : null;
-    if (wantPhoto && !ph) (t.taxon_photos || []).some(function (tp) { ph = openPhoto(tp.photo); return !!ph; });
-    if (ph) {
-      var img = document.createElement("img"); img.className = "nimg"; img.loading = "lazy";
-      img.alt = "Photo of " + (t.preferred_common_name || t.name); img.src = (ph.medium_url || ph.url || "").replace("square", "small");
-      var cr = document.createElement("div"); cr.className = "ncredit"; cr.textContent = "Example photo: " + (ph.attribution || "iNaturalist");
-      el.querySelector(".nphoto").appendChild(img); el.querySelector(".nphoto").appendChild(cr);
-    }
-    var about = plain(t.wikipedia_summary, 260);
-    if (about) { var p = document.createElement("p"); p.className = "nabout"; p.textContent = about; el.querySelector(".nmore").appendChild(p); }
-  }
-
-  function wildPopup(o) {
-    var t = o.taxon || {}, g = GROUPS[t.iconic_taxon_name] || ["Wildlife", "#7b4bb8"], ph = openPhoto((o.photos || [])[0]);
-    var el = document.createElement("div");
-    var name = t.preferred_common_name || o.species_guess || t.name || "Not yet identified";
-    el.innerHTML = '<span class="tag nat">' + esc(g[0].toUpperCase()) + " · SEEN BY A NEIGHBOR</span><br><b>" + esc(name) + "</b>" +
-      (t.name && t.name !== name ? " <i>(" + esc(t.name) + ")</i>" : "") + '<div class="nphoto"></div>' +
-      "Seen " + esc(o.observed_on || "") + ' · <a href="' + esc(o.uri) + '" target="_blank" rel="noopener">iNaturalist</a><div class="nmore"></div>';
-    if (ph) {
-      var img = document.createElement("img"); img.className = "nimg"; img.alt = "Photo of " + name; img.src = ph.url.replace("square", "small");
-      var cr = document.createElement("div"); cr.className = "ncredit"; cr.textContent = "Photo " + (ph.attribution || "");
-      el.querySelector(".nphoto").appendChild(img); el.querySelector(".nphoto").appendChild(cr);
-    }
-    if (t.id) taxonInfo("id:" + t.id, INAT + "/taxa/" + t.id).then(function (info) { fillAbout(el, info, false); });
-    return el;
-  }
-  function loadWild() {
-    var b = map.getBounds();
-    var d1 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-    var q = "nelat=" + b.getNorth().toFixed(4) + "&nelng=" + b.getEast().toFixed(4) + "&swlat=" + b.getSouth().toFixed(4) + "&swlng=" + b.getWest().toFixed(4) +
-      "&d1=" + d1 + "&photos=true&photo_license=" + OPEN_LIC.join(",") + "&geoprivacy=open&order_by=observed_on&per_page=200";
-    fetchJson(INAT + "/observations?" + q).then(function (j) {
-      (j.results || []).forEach(function (o) {
-        if (wildSeen[o.id] || !o.location || o.obscured) return;
-        var ll = o.location.split(",").map(parseFloat);
-        if (isNaN(ll[0]) || isNaN(ll[1])) return;
-        wildSeen[o.id] = true; nWild++;
-        var g = GROUPS[(o.taxon || {}).iconic_taxon_name] || ["Wildlife", "#7b4bb8"];
-        var m = L.circleMarker(ll, { radius: 7, color: "#ffffff", weight: 2, fillColor: g[1], fillOpacity: 0.95 });
-        m.bindPopup(function () { return wildPopup(o); }, { maxWidth: 260, minWidth: 220 });
-        m.bindTooltip(((o.taxon || {}).preferred_common_name || o.species_guess || g[0]) + " · " + (o.observed_on || ""), { sticky: true });
-        m.addTo(wildLayer);
-      });
-      natureMsg();
-    }).catch(function (e) { nNat.textContent = "Wildlife sightings did not load (" + e.message + ")."; });
-  }
-
-  function isNative(sci) { return NATIVE.some(function (n) { return sci.indexOf(n) === 0; }); }
-  function cleanSci(sci) { return sci.replace(/'[^']*'/g, "").replace(/\b(spp|sps|sp|ssp|subsp|var|x)\b\.?/gi, " ").trim().split(/\s+/).slice(0, 2).join(" "); }
-  function treePopup(r, sci, common, nat) {
-    var el = document.createElement("div");
-    el.innerHTML = '<span class="tag nat">' + (nat ? "STREET TREE · CALIFORNIA NATIVE" : "STREET TREE") + "</span><br><b>" + esc(common || sci || "Tree") + "</b>" +
-      (sci && sci !== common ? " <i>(" + esc(sci) + ")</i>" : "") + '<div class="nphoto"></div>' +
-      (r.onstreet ? "On " + esc(r.onstreet) + ". " : "") + (nat ? "Native trees feed far more local insects and birds. " : "") +
-      '<div class="nmore"></div><span class="small">Source: city street tree list (open data).</span>';
-    var q = cleanSci(sci || "");
-    if (q && !/^tree/i.test(q)) taxonInfo("q:" + q, INAT + "/taxa?per_page=1&q=" + encodeURIComponent(q)).then(function (info) { fillAbout(el, info, true); });
-    return el;
-  }
-  var TR = CITY.street_trees || null;
-  // Draw order decides which dot a tap lands on: flood zone at the bottom, then trees, then drains on top.
-  function orderLayers() {
-    treeLayer.eachLayer(function (m) { if (m._map) m.bringToBack(); });
-    if (zoneLayer.bringToBack && map.hasLayer(zoneLayer)) zoneLayer.bringToBack();
-  }
-  function loadTrees() {
-    if (!TR) return;
-    var b = map.getBounds().pad(0.1);
-    var where = "latitude between " + b.getSouth().toFixed(5) + " and " + b.getNorth().toFixed(5) + " AND longitude between " + b.getWest().toFixed(5) + " and " + b.getEast().toFixed(5);
-    fetchJson(HOSTS[0] + "/resource/" + TR.dataset + ".json?$select=treeid,species,onstreet,latitude,longitude&$where=" + encodeURIComponent(where) + "&$limit=4000").then(function (rows) {
-      rows.forEach(function (r) {
-        var la = parseFloat(r.latitude), lo = parseFloat(r.longitude);
-        if (!r.treeid || treeSeen[r.treeid] || isNaN(la) || isNaN(lo)) return;
-        treeSeen[r.treeid] = true; nTree++;
-        var parts = String(r.species || "").split("::"), sci = (parts[0] || "").trim(), common = (parts[1] || "").trim() || sci;
-        var nat = isNative(sci);
-        var m = L.circleMarker([la, lo], { renderer: canvas, radius: nat ? 6 : 4, color: "#ffffff", weight: 1, fillColor: nat ? "#17603a" : "#2f8a4a", fillOpacity: nat ? 0.95 : 0.6 });
-        m.bindPopup(function () { return treePopup(r, sci, common, nat); }, { maxWidth: 260, minWidth: 220 });
-        m.addTo(treeLayer);
-      });
-      orderLayers();
-      natureMsg();
-    }).catch(function (e) { nNat.textContent = "Street trees did not load (" + e.message + ")."; });
-  }
-  function natureMsg() {
-    var z = map.getZoom(), w = document.getElementById("tWild").checked, t = document.getElementById("tTree").checked;
-    if (!w && !t) { nNat.textContent = ""; return; }
-    if (z < 14) { nNat.textContent = "Zoom in for wildlife and trees."; return; }
-    nNat.textContent = "Nature loaded: " + [w ? nWild + (nWild === 1 ? " sighting" : " sightings") : "", t && z >= 17 ? nTree + (nTree === 1 ? " tree" : " trees") : ""].filter(Boolean).join(", ") + "." + (t && z < 17 ? " Zoom in closer for trees." : "");
-  }
-  function syncNature() {
-    var z = map.getZoom(), w = document.getElementById("tWild").checked, t = document.getElementById("tTree").checked;
-    (w && z >= 14) ? wildLayer.addTo(map) : map.removeLayer(wildLayer);
-    (t && z >= 17) ? treeLayer.addTo(map) : map.removeLayer(treeLayer);
-    if (t && z >= 17) orderLayers();
-    natureMsg();
-    clearTimeout(natureTimer);
-    natureTimer = setTimeout(function () { if (w && z >= 14) loadWild(); if (t && z >= 17) loadTrees(); }, 600);
-  }
-  map.on("moveend", syncNature);
-  document.getElementById("tWild").addEventListener("change", syncNature);
-  document.getElementById("tTree").addEventListener("change", syncNature);
-  syncNature();
-
   // ================= Live conditions =================
   var radar = L.tileLayer("https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png", { opacity: 0.6, maxZoom: 19, attribution: "Radar: NWS NEXRAD via Iowa Environmental Mesonet" });
   function loadLive() {
@@ -756,15 +613,7 @@ button.act.alt { background: #fff; color: var(--ink); }
       '<span class="ldot" style="background:#f9a825;border-color:#222"></span>Check first<br>' +
       '<span class="ldot" style="background:#2e7d32;border-color:#222"></span>Cleared in last 14 days<br>' +
       '<b>Neighbor reports</b>' +
-      '<span class="ldot" style="background:#00bcd4;border-color:#004d5a"></span>Water here (unverified)' +
-      '<b>Nature (zoom in)</b>' +
-      '<span class="ldot" style="background:#d0581c"></span>Bird<br>' +
-      '<span class="ldot" style="background:#7b4bb8"></span>Insect or other small animal<br>' +
-      '<span class="ldot" style="background:#8aa21c"></span>Plant<br>' +
-      '<span class="ldot" style="background:#8a5a2b"></span>Fungus<br>' +
-      '<span class="ldot" style="background:#c43b78"></span>Mammal, reptile or amphibian<br>' +
-      '<span class="ldot" style="background:#2f8a4a"></span>Street tree<br>' +
-      '<span class="ldot" style="background:#17603a"></span>California native tree</details>';
+      '<span class="ldot" style="background:#00bcd4;border-color:#004d5a"></span>Water here (unverified)' + '</details>';
     return d;
   };
   legend.addTo(map);

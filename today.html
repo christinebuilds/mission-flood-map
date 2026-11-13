@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Creek Today</title>
+<style>
+:root { --bg:#f4f6f3; --ink:#18261d; --muted:#55685b; --line:#d5dfd6; --card:#fff; --link:#1d6a4f; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+nav.top, main { max-width: 760px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+nav.top { padding-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
+nav.top a { color: var(--link); text-decoration: none; padding: 4px 0; }
+nav.top a[aria-current] { color: var(--ink); font-weight: 700; border-bottom: 2px solid var(--ink); }
+main { padding-top: 14px; padding-bottom: 32px; display: flex; flex-direction: column; gap: 16px; }
+h1 { font-size: 28px; line-height: 1.15; margin: 0; }
+.date { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
+.now { font-size: 18px; margin: 0; }
+.chip { display: inline-block; font-size: 13px; background: #fff; border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; margin: 0 6px 6px 0; }
+.chip.good { background: #e3f1e6; border-color: #2f8a4a; color: #1e5a31; font-weight: 600; }
+.chip.alert { background: #fdecea; border-color: #c0392b; color: #8e2a1f; font-weight: 600; }
+.hours { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.hour { flex: 0 0 auto; min-width: 62px; text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 6px 4px; font-size: 13px; }
+.hour b { display: block; font-size: 16px; }
+.hour .p { color: #1d5a9f; }
+.doors { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.door { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; text-decoration: none; color: var(--ink); }
+.door:hover, .door:focus-visible { border-color: var(--ink); }
+.door b { display: block; font-size: 19px; margin-bottom: 2px; }
+.door span { color: var(--muted); font-size: 14px; }
+h2 { font-size: 17px; margin: 0 0 8px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.sp { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; font-size: 13px; text-decoration: none; color: var(--ink); display: block; }
+.sp img { width: 100%; aspect-ratio: 1; object-fit: cover; background: #e8eee9; display: block; }
+.sp div { padding: 6px 8px; }
+.sp b { display: block; font-size: 14px; line-height: 1.25; }
+.sp small { color: var(--muted); }
+.small { font-size: 13px; color: var(--muted); margin: 0; }
+a { color: var(--link); }
+</style>
+</head>
+<body>
+<nav class="top"><a href="today.html" aria-current="page">Mission Creek Today</a><a href="walk.html">Plan a walk</a><a href="./">Storms &amp; flooding</a></nav>
+<main>
+  <header>
+    <h1 id="title">Mission Creek Today</h1>
+    <p class="date" id="date"></p>
+  </header>
+  <section>
+    <p class="now" id="now">Loading the weather…</p>
+    <div style="margin-top:8px"><span class="chip" id="cWalk" hidden></span><span class="chip" id="cAlert" hidden></span><span class="chip" id="cTide" hidden></span></div>
+    <div class="hours" id="hours" aria-label="Next hours"></div>
+  </section>
+  <section class="doors">
+    <a class="door" href="walk.html"><b>Plan a walk</b><span>See what neighbors have spotted along your route, the trees you'll pass, and the best time to go.</span></a>
+    <a class="door" href="./"><b>Storms &amp; flooding</b><span>Where water collects, what's been reported, and which storm drains to check or clear.</span></a>
+  </section>
+  <section>
+    <h2>Seen nearby this week</h2>
+    <div class="grid" id="seen"></div>
+    <p class="small" id="seenMsg" style="margin-top:8px">Loading sightings…</p>
+  </section>
+  <p class="small">Made by neighbors, not the city. Weather: National Weather Service. Tide: NOAA. Sightings and photos: <a href="https://www.inaturalist.org">iNaturalist</a>, with credit to each photographer.</p>
+</main>
+<script>
+(function () {
+  function fetchJson(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }
+  var cityId = ((new URLSearchParams(location.search)).get("city") || "sf").toLowerCase().replace(/[^a-z0-9-]/g, "");
+  document.getElementById("date").textContent = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  fetchJson("cities/" + cityId + "/city.json").then(function (CITY) {
+    var NB = CITY.neighborhood || { name: CITY.name, center: CITY.weather_point };
+    var C = NB.center, WP = CITY.weather_point || C;
+    document.getElementById("title").textContent = NB.name + " Today";
+    document.title = NB.name + " Today";
+    function hr(t) { return new Date(t).toLocaleTimeString("en-US", { hour: "numeric" }).replace(":00", "").toLowerCase(); }
+    function pop(p) { var v = p.probabilityOfPrecipitation && p.probabilityOfPrecipitation.value; return v == null ? 0 : v; }
+
+    fetchJson("https://api.weather.gov/points/" + WP[0] + "," + WP[1]).then(function (j) { return fetchJson(j.properties.forecastHourly); }).then(function (j) {
+      var all = j.properties.periods || [], first = all[0];
+      if (first) document.getElementById("now").textContent = "Right now: " + first.temperature + "°" + first.temperatureUnit + ", " + first.shortForecast.toLowerCase() + ".";
+      var hours = document.getElementById("hours");
+      all.slice(0, 10).forEach(function (p) {
+        var d = document.createElement("div"); d.className = "hour";
+        var t = document.createElement("span"), b = document.createElement("b"), r = document.createElement("span");
+        t.textContent = hr(p.startTime); b.textContent = p.temperature + "°"; r.className = "p"; r.textContent = pop(p) + "% rain";
+        d.appendChild(t); d.appendChild(b); d.appendChild(r); hours.appendChild(d);
+      });
+      var ps = all.slice(0, 14).filter(function (p) { return p.isDaytime; }), cW = document.getElementById("cWalk"), best = null;
+      cW.hidden = false;
+      if (ps.length < 2) { cW.textContent = "It's dark out. Check back in the morning for the best time to walk."; return; }
+      for (var i = 0; i < ps.length - 1; i++) {
+        if (new Date(ps[i + 1].startTime) - new Date(ps[i].startTime) > 36e5 * 1.5) continue;
+        var score = Math.max(pop(ps[i]), pop(ps[i + 1])) + (/thunder/i.test(ps[i].shortForecast + ps[i + 1].shortForecast) ? 50 : 0);
+        if (!best || score < best.score) best = { score: score, a: ps[i], b: ps[i + 1] };
+      }
+      if (!best) best = { score: pop(ps[0]), a: ps[0], b: ps[0] };
+      var worst = Math.max(pop(best.a), pop(best.b)), end = new Date(new Date(best.b.startTime).getTime() + 36e5);
+      var when = hr(best.a.startTime) + " to " + hr(end);
+      if (best.score < 30) { cW.className = "chip good"; cW.textContent = "Good time for a walk: " + when + " (" + worst + "% chance of rain)"; }
+      else cW.textContent = "Wet day. Driest stretch for a walk: " + when + " (" + worst + "% chance of rain)";
+    }).catch(function () { document.getElementById("now").textContent = "The forecast is unavailable right now."; });
+
+    fetchJson("https://api.weather.gov/alerts/active?point=" + WP[0] + "," + WP[1]).then(function (j) {
+      var ev = (j.features || []).map(function (f) { return f.properties && f.properties.event; }).filter(Boolean), cA = document.getElementById("cAlert");
+      if (ev.length) { cA.hidden = false; cA.className = "chip alert"; cA.textContent = "Weather alert: " + ev.filter(function (x, i) { return ev.indexOf(x) === i; }).join(", "); }
+    }).catch(function () {});
+
+    if (CITY.tide_station) {
+      var d = new Date(), ymd = "" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
+      fetchJson("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=" + ymd + "&range=48&station=" + encodeURIComponent(CITY.tide_station) + "&product=predictions&interval=hilo&datum=MLLW&time_zone=lst_ldt&units=english&format=json").then(function (j) {
+        var nx = (j.predictions || []).filter(function (p) { return p.type === "H" && new Date(p.t.replace(" ", "T")).getTime() > Date.now(); })[0], cT = document.getElementById("cTide");
+        if (nx) { cT.hidden = false; cT.textContent = "Next high tide: " + new Date(nx.t.replace(" ", "T")).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }); }
+      }).catch(function () {});
+    }
+
+    // Sightings within about 1 km of the neighborhood centre, last 7 days, one card per species.
+    var OPEN_LIC = "cc0,cc-by,cc-by-nc,cc-by-sa,cc-by-nc-sa,cc-by-nd,cc-by-nc-nd";
+    var d1 = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+    fetchJson("https://api.inaturalist.org/v1/observations?lat=" + C[0] + "&lng=" + C[1] + "&radius=1&d1=" + d1 + "&photos=true&photo_license=" + OPEN_LIC + "&geoprivacy=open&order_by=observed_on&per_page=60").then(function (j) {
+      var grid = document.getElementById("seen"), seen = {}, n = 0;
+      (j.results || []).forEach(function (o) {
+        var t = o.taxon || {}, k = t.id || o.id, ph = (o.photos || [])[0];
+        if (seen[k] || n >= 8 || !ph || o.obscured) return; seen[k] = 1; n++;
+        var a = document.createElement("a"); a.className = "sp"; a.href = o.uri; a.target = "_blank"; a.rel = "noopener";
+        var img = document.createElement("img"); img.loading = "lazy"; img.src = ph.url.replace("square", "small");
+        var name = t.preferred_common_name || o.species_guess || t.name || "Not yet identified";
+        img.alt = "Photo of " + name; img.title = "Photo " + (ph.attribution || "");
+        var box = document.createElement("div"), b = document.createElement("b"), s = document.createElement("small");
+        b.textContent = name; s.textContent = "Seen " + (o.observed_on || "");
+        box.appendChild(b); box.appendChild(s); a.appendChild(img); a.appendChild(box); grid.appendChild(a);
+      });
+      document.getElementById("seenMsg").textContent = n ? "Within about half a mile, from iNaturalist. Tap one to see who saw it and where." : "Nothing posted nearby in the last week. Yours could be the first.";
+    }).catch(function () { document.getElementById("seenMsg").textContent = "Sightings are unavailable right now."; });
+  }).catch(function (e) { document.getElementById("now").textContent = "This page's settings did not load (" + e.message + ")."; });
+})();
+</script>
+</body>
+</html>
