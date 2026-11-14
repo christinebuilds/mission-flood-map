@@ -3,8 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SF Flood Map</title>
-<meta name="description" content="A neighbor-made map of San Francisco storm drains, flood reports, past flooding and the city's flood zone.">
+<title>SF Flood Map (beta)</title>
+<meta name="description" content="A neighbor-made map of San Francisco storm drains, flood reports, past flooding and the city&#39;s flood zone. A beta, not an official service.">
+<meta name="theme-color" content="#2f7d5b">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="My Neighborhood Map">
+<meta property="og:title" content="SF Flood Map (beta)">
+<meta property="og:description" content="A neighbor-made map of San Francisco storm drains, flood reports, past flooding and the city&#39;s flood zone. A beta, not an official service.">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="My Neighborhood Map: a green leaf and a raindrop over simple map lines. Trees, birds, walks and flood help for your block, San Francisco, beta.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- SITE ADDRESS: the only place this page names its full web address. Link previews need it written out in full.
+     If the site moves (for example to a custom domain), change the two URLs in this block. -->
+<meta property="og:url" content="https://christinebuilds.github.io/neighborhood-map/flood.html">
+<meta property="og:image" content="https://christinebuilds.github.io/neighborhood-map/assets/preview.png">
+<!-- end SITE ADDRESS -->
 <style>
 html, body { margin: 0; background: #f4f6f7; color: #16252d; font: 17px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
 main { max-width: 560px; margin: 0 auto; padding: 40px 20px; }
@@ -13,18 +31,20 @@ p { margin: 0 0 14px; }
 a.big { display: block; text-align: center; background: #16252d; color: #fff; text-decoration: none; font-weight: 700; font-size: 19px; padding: 16px; border-radius: 12px; margin: 22px 0; }
 .small { font-size: 14px; color: #53686f; }
 a { color: #1d6a9f; }
+.betatag { display: inline-block; vertical-align: middle; margin-left: 8px; padding: 2px 10px; border-radius: 99px; background: #2a6f9e; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
 </style>
 </head>
 <body>
 <main>
-  <h1>SF Flood Map</h1>
+  <h1>SF Flood Map <a class="betatag" href="./#feedback" title="Beta: tell us what you think">Beta</a></h1>
+  <p class="small">Not an official service. Emergency: <a href="tel:911">9-1-1</a>. <a href="./#feedback">💬 Send feedback</a></p>
   <p>A map made by neighbors to get San Francisco blocks through heavy rain.</p>
   <p>It shows the storm drains near you and which to check first, flood reports from neighbors and from 311, places that flooded in past storms, and the city's flood zone.</p>
   <p>You can mark a drain as cleared, thank the neighbor who cleared one, and report water on your street.</p>
   <a class="big" href="./#flood">Open the flood map</a>
   <p class="small">Part of <a href="./">My Neighborhood Map</a>. Not an official service or a warning system. Emergency: 9-1-1. Report flooding to the city at 3-1-1.</p>
   <p class="small">Made with 💚 by <a href="https://github.com/christinebuilds/neighborhood-map">christinebuilds</a>. This map is open source. Ideas, fixes and new cities are welcome — <a href="https://github.com/christinebuilds/neighborhood-map/blob/main/CONTRIBUTING.md">see how to contribute</a>.</p>
-  <p class="small">Version: 2026-11-13 10:56 PT</p>
+  <p class="small">Version: 2026-11-13 20:40 PT</p>
 </main>
 <script>
 // keep ?city= when opening the map
