@@ -3,7 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Neighborhood Map</title>
+<title>My Neighborhood Map (beta)</title>
+<meta name="description" content="Trees, birds, walks and flood help for your block in San Francisco: the best time for a walk today, what neighbors saw this week, storm drains and flood reports. A beta made by a neighbor, not the city.">
+<meta name="theme-color" content="#2f7d5b">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="My Neighborhood Map">
+<meta property="og:title" content="My Neighborhood Map (beta)">
+<meta property="og:description" content="Trees, birds, walks and flood help for your block in San Francisco: the best time for a walk today, what neighbors saw this week, storm drains and flood reports. A beta made by a neighbor, not the city.">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="My Neighborhood Map: a green leaf and a raindrop over simple map lines. Trees, birds, walks and flood help for your block, San Francisco, beta.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- SITE ADDRESS: the only place this page names its full web address. Link previews need it written out in full.
+     If the site moves (for example to a custom domain), change the two URLs in this block. -->
+<meta property="og:url" content="https://christinebuilds.github.io/neighborhood-map/">
+<meta property="og:image" content="https://christinebuilds.github.io/neighborhood-map/assets/preview.png">
+<!-- end SITE ADDRESS -->
 <link rel="stylesheet" href="vendor/leaflet.css">
 <style>
 :root { --bg:#f4f6f7; --ink:#16252d; --muted:#53686f; --line:#d3dde1; --card:#fff; --hot:#c0392b; --one:#e08a1e; --c311:#1565c0; --link:#1d6a9f; }
@@ -143,6 +162,12 @@ button.act[aria-pressed="true"] { background: #1d6a4f; border-color: #1d6a4f; co
 .floodinfo { display: flex; flex-direction: column; gap: 16px; }
 /* ---- brand, day strip, call to action ---- */
 .brand { margin: 0 0 2px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+/* Beta chip and feedback link beside the brand line: both open the feedback sheet. */
+.brand .betatag, .brand .fbtop { font: inherit; letter-spacing: normal; text-transform: none; cursor: pointer; vertical-align: baseline; }
+.brand .betatag { margin-left: 6px; padding: 1px 8px; border-radius: 99px; border: 0; background: #2a6f9e; color: #fff; font-size: 11px; font-weight: 700; }
+.brand .fbtop { margin-left: 8px; padding: 0; border: 0; background: none; color: var(--link); font-size: 12px; font-weight: 600; text-decoration: underline; }
+#safety { margin: 6px 0 0; }
+#safety a { white-space: nowrap; }
 #newVer { display: block; width: 100%; border: 0; background: #1d6a4f; color: #fff; font: inherit; font-weight: 700; padding: 10px 16px; cursor: pointer; }
 #newVer[hidden], #find[hidden] { display: none; }
 .pills { display: flex; gap: 8px; margin-top: 8px; }
@@ -252,7 +277,7 @@ button.fbbtn { display: inline-flex; align-items: center; gap: 4px; }
 <body>
 <button type="button" id="newVer" hidden>A newer version of this map is available. Tap to update.</button>
 <header>
-  <p class="brand">My Neighborhood Map</p>
+  <p class="brand">My Neighborhood Map<button type="button" class="betatag" id="betaTag" aria-label="Beta: tell us what you think">Beta</button><button type="button" class="fbtop" id="fbTop"><span aria-hidden="true">💬</span> Feedback</button></p>
   <h1 id="title">Your neighborhood today</h1>
   <p class="sub"><span id="sun"></span> <button type="button" class="linkish" id="changePlace" hidden>Change place</button></p>
   <form id="find" autocomplete="off">
@@ -280,6 +305,7 @@ button.fbbtn { display: inline-flex; align-items: center; gap: 4px; }
     <button class="act only-flood" type="button" id="bReport" aria-pressed="false">Report water</button>
     <button type="button" class="layersbtn" id="bLayers" aria-expanded="false" aria-controls="layerPanel">Layers</button>
   </div>
+  <p class="small only-flood" id="safety">Made by neighbors. Not an official service. Emergency: <a href="tel:911">9-1-1</a>. City help: 3-1-1.</p>
   <div id="walkOpts" class="only-nature" hidden>
     <div class="pills" role="group" aria-label="Where the walk ends">
       <button type="button" id="wLoop" aria-pressed="true">Back home</button>
@@ -430,7 +456,7 @@ button.fbbtn { display: inline-flex; align-items: center; gap: 4px; }
 // Phones: keep pop-ups inside the map (scroll inside them if long) instead of running off the screen.
 L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 0.38)), autoPanPadding: [8, 8], keepInView: false });
 // The time this copy of the page was built. The footer shows it, and the page checks version.txt for a newer one.
-var BUILD = "2026-11-13 13:48 PT";
+var BUILD = "2026-11-13 20:40 PT";
 (function () {
   var v = document.getElementById("ver"); if (v) v.textContent = BUILD;
   fetch("version.txt?ts=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) {
@@ -950,6 +976,8 @@ var BUILD = "2026-11-13 13:48 PT";
   var fbForm = document.getElementById("fb"), fbThanks = document.getElementById("fbThanks");
   function openFb() { fbMsg.textContent = ""; document.getElementById("fbGo").disabled = false; fbForm.hidden = false; fbThanks.hidden = true; fbSheet.hidden = false; document.getElementById("fbBody").focus(); }
   document.getElementById("fbOpen").addEventListener("click", openFb);
+  document.getElementById("betaTag").addEventListener("click", openFb);
+  document.getElementById("fbTop").addEventListener("click", openFb);
   document.getElementById("fbCancel").addEventListener("click", function () { fbSheet.hidden = true; });
   document.getElementById("fbDone").addEventListener("click", function () { fbSheet.hidden = true; });
   if (location.hash === "#feedback") fbSheet.hidden = false;
@@ -1979,7 +2007,7 @@ var BUILD = "2026-11-13 13:48 PT";
 
   // ---------- your neighborhood: find, name, remember ----------
   var you = null;
-  function titleFor(name) { var t = (name ? name : "Your neighborhood") + " today"; document.getElementById("title").textContent = t; document.title = t; }
+  function titleFor(name) { var t = (name ? name : "Your neighborhood") + " today"; document.getElementById("title").textContent = t; document.title = t + " · My Neighborhood Map (beta)"; }
   function setPlace(ll, name, zoom) {
     place = { lat: Math.round(ll[0] * 1000) / 1000, lon: Math.round(ll[1] * 1000) / 1000, name: name || "" };
     store("fm_place", place);
@@ -2054,7 +2082,7 @@ var BUILD = "2026-11-13 13:48 PT";
     var vb = [B[0][1], B[1][0], B[1][1], B[0][0]].join(",");
     fetchJson("https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&countrycodes=us&bounded=1&viewbox=" + vb + "&q=" + encodeURIComponent(q.replace(/\s*&\s*/g, " and "))).then(function (rows) {
       var r = rows[0], ll = r && [parseFloat(r.lat), parseFloat(r.lon)];
-      if (!r || !inCity(ll)) { findMsg.textContent = "Couldn't find that in " + CITY.name + ". Try cross streets, like \"Main and 3rd\"."; return; }
+      if (!r || !inCity(ll)) { findMsg.textContent = "Couldn't find that in " + CITY.name + ". This map only covers " + CITY.name + ". Try an address or cross streets, like \"Main and 3rd\"."; return; }
       var a = r.address || {};
       setPlace(ll, a.neighbourhood || a.suburb || a.quarter || a.city_district || ""); document.getElementById("addr").blur();
     }).catch(function () { findMsg.textContent = "Address search isn't answering right now. Try Use my location, or zoom in by hand."; });
