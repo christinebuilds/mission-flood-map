@@ -1,0 +1,47 @@
+name: Something is broken
+description: Something on the map looks wrong or doesn't work.
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for telling us. Plain words are fine. In an emergency call 9-1-1; this map is not an official service.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you tap, and what went wrong?
+      placeholder: I tapped "Plan a walk" and nothing happened.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+  - type: dropdown
+    id: tab
+    attributes:
+      label: Which part of the map?
+      options:
+        - Nature & walks
+        - Storms & flooding
+        - Both / not sure
+  - type: input
+    id: device
+    attributes:
+      label: Phone or computer, and browser
+      description: For example "iPhone 13, Safari" or "Pixel 7, Chrome".
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: At the very bottom of the map it says "Version:" and a date and time. Copy that here.
+      placeholder: "2026-11-13 13:48 PT"
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (optional)
+      description: Drag a screenshot here. Please crop out your address or anything private.
