@@ -1,0 +1,49 @@
+name: Feature idea
+description: Something you wish the map could do.
+title: "Idea: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are welcome. Christine reads each one and may add it to the [features wishlist](https://github.com/christinebuilds/neighborhood-map/issues?q=is%3Aissue+is%3Aopen+label%3Awishlist). Check that list first in case it's already there.
+  - type: textarea
+    id: why
+    attributes:
+      label: What would it help you do?
+      description: Tell us the moment you wished for it, e.g. "Checking the rain at bedtime".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What would you see or tap on the map?
+    validations:
+      required: true
+  - type: dropdown
+    id: tab
+    attributes:
+      label: Which part of the map?
+      options:
+        - Nature & walks
+        - Storms & flooding
+        - Both / the whole page
+  - type: input
+    id: device
+    attributes:
+      label: Phone or computer, and browser (optional)
+      description: For example "iPhone 13, Safari".
+  - type: input
+    id: version
+    attributes:
+      label: Version (optional)
+      description: At the very bottom of the map it says "Version:" and a date and time.
+  - type: dropdown
+    id: build
+    attributes:
+      label: Would you like to build it?
+      options:
+        - No, just sharing the idea
+        - Maybe, with some help
+        - Yes

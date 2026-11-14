@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Not on GitHub? Tell us on the map
+    url: https://christinebuilds.github.io/neighborhood-map/#feedback
+    about: Tap "Feedback" at the top of the map (or "Report a problem or share an idea" at the bottom). Anonymous, no account needed.
+  - name: Emergency or flooding now
+    url: https://sf311.org/
+    about: This map is not an official service. In an emergency call 9-1-1. Report flooding to the city at 3-1-1.
