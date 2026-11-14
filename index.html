@@ -456,7 +456,7 @@ button.fbbtn { display: inline-flex; align-items: center; gap: 4px; }
 // Phones: keep pop-ups inside the map (scroll inside them if long) instead of running off the screen.
 L.Popup.mergeOptions({ maxHeight: Math.max(160, Math.round(window.innerHeight * 0.38)), autoPanPadding: [8, 8], keepInView: false });
 // The time this copy of the page was built. The footer shows it, and the page checks version.txt for a newer one.
-var BUILD = "2026-11-13 20:40 PT";
+var BUILD = "2026-11-13 20:43 PT";
 (function () {
   var v = document.getElementById("ver"); if (v) v.textContent = BUILD;
   fetch("version.txt?ts=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) {
@@ -949,9 +949,21 @@ var BUILD = "2026-11-13 20:40 PT";
     }
     clearTimeout(confetti.t);
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      ps.forEach(function (p) { p.x = Math.random() * W; p.y = Math.random() * H * 0.6; }); draw(true);
-      confetti.t = setTimeout(function () { c.hidden = true; }, 2500); return;
+      // Reduce Motion: a small, slow puff near where it started that drifts a little and fades, not a frozen full-screen scatter.
+      ps = ps.slice(0, 36);
+      ps.forEach(function (p) { var a = Math.random() * 6.283, d = 20 + Math.random() * 50; p.x = x + Math.cos(a) * d; p.y = y - 40 + Math.sin(a) * d; p.vx = Math.cos(a) * 0.35; p.vy = Math.sin(a) * 0.35 + 0.15; p.w *= 0.8; p.h *= 0.8; });
+      var g0 = Date.now(), gentle = confetti.run = {};
+      (function soft() {
+        if (confetti.run !== gentle) return;
+        var k = (Date.now() - g0) / 1800;
+        if (k >= 1) { c.hidden = true; return; }
+        ps.forEach(function (p) { p.x += p.vx; p.y += p.vy; });
+        c.style.opacity = String(1 - k * k); draw(true);
+        requestAnimationFrame(soft);
+      })();
+      return;
     }
+    c.style.opacity = "1";
     var t0 = Date.now(), run = confetti.run = {};
     (function step() {
       if (confetti.run !== run) return;
