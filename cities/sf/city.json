@@ -1,0 +1,117 @@
+{
+  "id": "sf",
+  "name": "San Francisco",
+  "title": "My Neighborhood Map: San Francisco",
+  "maintainers": [
+    "christinebuilds"
+  ],
+  "bounds": [
+    [
+      37.708,
+      -122.515
+    ],
+    [
+      37.81,
+      -122.357
+    ]
+  ],
+  "weather_point": [
+    37.765,
+    -122.41
+  ],
+  "tide_station": "9414290",
+  "open_data_hosts": [
+    "https://data.sf.gov",
+    "https://data.sfgov.org"
+  ],
+  "reports_311": {
+    "name": "SF311",
+    "source": "SF311 open data (DataSF)",
+    "dataset": "vw6y-z8j6",
+    "where": "service_name = 'Sewer'",
+    "fields": {
+      "id": "service_request_id",
+      "date": "requested_datetime",
+      "status": "status_description",
+      "kind": "service_subtype",
+      "details": "service_details",
+      "address": "address",
+      "lat": "lat",
+      "lon": "long",
+      "as_of": "data_as_of"
+    },
+    "kinds": {
+      "flooding": {
+        "label": "Flooding",
+        "role": "flooding"
+      },
+      "catch_basin": {
+        "label": "Storm drain needs maintenance",
+        "role": "drain"
+      },
+      "sewage_back-up_discharge": {
+        "label": "Sewage backup",
+        "role": "sewage"
+      }
+    },
+    "track_url": "https://sf311.org/track-case",
+    "note": "These come from SF311's open dataset on DataSF, which updates nightly around 6 am, so today's reports appear the next morning."
+  },
+  "drains": {
+    "dataset": "jtgq-b7c5",
+    "id_field": "dpw_node_id",
+    "type_field": "drain_type",
+    "location_field": "location",
+    "adopt_url": "https://adoptadrain.sfwater.org/about",
+    "adopt_label": "Adopt a Drain SF"
+  },
+  "flood_zone": {
+    "dataset": "jzu3-4yxp",
+    "geom_field": "the_geom",
+    "title": "100-year storm flood risk zone",
+    "note": "the SFPUC's official 100-year storm flood risk zone, from DataSF. It models a very rare storm and covers storm runoff only, not bay or ocean flooding. Use it to see which blocks sit low.",
+    "popup": "The SFPUC says areas inside this boundary are highly likely to see deep, connected flooding in a 100-year storm. It covers storm runoff only, not bay or ocean flooding, and a normal storm is far smaller.",
+    "url": "https://www.sfpuc.gov/learning/emergency-preparedness/flood-maps",
+    "url_label": "SFPUC flood maps"
+  },
+  "past_storms_note": "Coverage started in the Mission and is thinner elsewhere. Know a spot that floods? Use Report water during a storm.",
+  "rain_notes_title": "How to read this for 1 to 2 inches of rain",
+  "rain_notes": [
+    {
+      "text": "The Dec 31, 2022 flood on 14th St came on a day with 5.46 inches, the second-wettest day on record in San Francisco. That is roughly three to five times a 1 to 2 inch storm.",
+      "src": "SF Chronicle",
+      "url": "https://preview-prod.w.sfchronicle.com/sf/article/storm-damage-weather-cost-17726925.php"
+    },
+    {
+      "text": "Rain per hour matters more than the total. In December 2019, much of the rain came down in about an hour.",
+      "src": "ABC7",
+      "url": "https://abc7news.com/weather/san-francisco-streets-flooded-during-heavy-rainstorm/5742118/"
+    },
+    {
+      "text": "Smaller storms have mostly meant ponding. After a storm that gave many areas an inch or more, public works dealt with about 15 flooded areas, mainly intersections.",
+      "src": "NBC Bay Area",
+      "url": "https://nbcbayarea.com/news/local/storm-downs-trees-san-francisco/3094059"
+    },
+    {
+      "text": "The map makers' reading, not a forecast: steady rain over many hours means ponding in the red areas. A burst of an inch or more in an hour, or clogged drains, is when the New Year's Eve 2022 pattern repeats."
+    }
+  ],
+  "links": [
+    {
+      "label": "SFPUC flood map for your block",
+      "url": "https://gis.sfpuc.org/portal/apps/instant/basic/index.html?appid=5dbe439cb71f42c89de0e2af110ae1f0"
+    },
+    {
+      "label": "Report flooding to SF311 (or call 3-1-1)",
+      "url": "https://www.sf.gov/report-flooding-water-leaks-sewer-backup-or-odor-issues"
+    },
+    {
+      "label": "Browse all 311 cases",
+      "url": "https://sf.connect.socrata.com/"
+    }
+  ],
+  "street_trees": {
+    "dataset": "tkzw-k3nq",
+    "note": "SF street tree list (DataSF). Needs fields treeid, species ('Scientific :: Common'), onstreet, latitude, longitude."
+  }
+}
