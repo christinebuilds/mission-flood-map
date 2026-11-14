@@ -1,25 +1,58 @@
 # How to help with My Neighborhood Map
 
-My Neighborhood Map is a free, open-source map made by neighbors. It has two views on one map: **Nature & walks** (trees in season, wildlife sightings, the weather and a walk planner) and **Storms & flooding** (storm drains, flood reports, past flooding and the city's flood zone).
+My Neighborhood Map is a free, open-source map made by neighbors in San Francisco. It has two views on one map: **Nature & walks** (trees in season, wildlife sightings, the weather and a walk planner) and **Storms & flooding** (storm drains, flood reports, past flooding and the city's flood zone).
 
-You do not need permission to help, and you do not need to be a programmer. First-time contributors are very welcome.
+The map is in **public beta**. You do not need permission to help, and you do not need to be a programmer. First-time contributors are very welcome, including people who code with AI tools like Claude Code or Cursor.
 
-## Share an idea or report a bug
+## Help without code
 
-- **On the map:** scroll to the bottom and tap **💬 Report a problem or share an idea**. It is anonymous and a volunteer reads every note.
-- **On GitHub:** [open an issue](https://github.com/christinebuilds/neighborhood-map/issues/new/choose). Say what you expected, what happened, and which phone or browser you used. A screenshot helps.
+- **On the map:** tap **Beta** or **💬 Feedback** at the top, or **💬 Report a problem or share an idea** at the bottom (or open [the map's feedback form](https://christinebuilds.github.io/neighborhood-map/#feedback) directly). It is anonymous and a volunteer reads every note. This is the best place for "this looked wrong on my phone".
+- **On GitHub:** [open an issue](https://github.com/christinebuilds/neighborhood-map/issues/new/choose) and pick **Something is broken**, **Feature idea** or **Suggest a spot that floods**. Plain words are fine.
+- **Add a spot that floods:** use the **Suggest a spot that floods** form. Give the cross streets and, if you can, a link to a news report. Someone will add it to the map.
 
-## Bring the map to your city
+## Help with code
 
-Everything local lives in one folder, `cities/<id>/`. See "Change the code" below, or open an issue and we will help you set it up.
+1. Pick a task from the [features wishlist](https://github.com/christinebuilds/neighborhood-map/issues?q=is%3Aissue+is%3Aopen+label%3Awishlist). New here? Start with a [good first issue](https://github.com/christinebuilds/neighborhood-map/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). Each one says why neighbors want it, what done looks like, where in the code to start and how to test it.
+2. Comment **"I'll take this"** so two people don't build the same thing. If you stop, say so; an issue with no progress for two weeks is open again.
+3. Fork the repository, make a branch, and build it.
+4. If you use an AI coding tool, point it at [CLAUDE.md](CLAUDE.md) first. It holds the project rules (they are good rules for people too).
+5. Open a pull request that says `Closes #<issue number>` and fill in the template.
 
-## Add a spot that floods (no coding)
+Have an idea that isn't on the list? Open a **Feature idea** issue first so we can talk about it before you build.
 
-Open a new issue with the **Suggest a spot that floods** form. Give the cross streets and, if you can, a link to a news report. Someone will add it to the map.
+### Run it on your computer
+
+There is no build step and nothing to install for the site itself:
+
+```
+python3 -m http.server 8931
+```
+
+Open http://localhost:8931/ and edit `index.html` or the files in `cities/sf/`. Reload to see changes.
+
+### Local test checklist
+
+Before you open a pull request:
+
+- [ ] `node tools/validate.mjs` passes (it checks the city files; the same check runs on every pull request).
+- [ ] You tried the change at phone size (iPhone 13 in Playwright or your browser's phone view) with real taps, on both tabs.
+- [ ] You did **not** send real reports, thanks or feedback to the live database while testing. In Playwright, mock Supabase with `page.route` (see CLAUDE.md).
+- [ ] No element IDs were renamed or removed (the script finds everything by ID).
+- [ ] The safety wording is unchanged: "Not an official service" and "Emergency: 9-1-1".
+- [ ] New words on the page are short and plain.
+- [ ] Pop-ups still fit on a phone.
+- [ ] You have before and after phone screenshots for the pull request.
+
+## How a pull request gets reviewed
+
+- Christine reviews every pull request and merges it. **Nothing reaches the live site without her.**
+- An automatic check runs `node tools/validate.mjs` and tells you in plain words if a data file is off.
+- She may ask for changes or smaller pieces. One feature per pull request makes this quick.
+- Once merged into `main`, the site updates itself within a few minutes.
 
 ## Add a spot yourself
 
-Each city has its own folder under `cities/`. San Francisco's past-storm areas live in `cities/sf/past-storms.json`.
+San Francisco's past-storm areas live in `cities/sf/past-storms.json`.
 
 1. Open that file on GitHub and tap the pencil icon. GitHub makes your own copy.
 2. Copy an existing area and change it. Each area has:
@@ -30,33 +63,28 @@ Each city has its own folder under `cities/`. San Francisco's past-storm areas l
    - `events`: one entry per report, with `when`, `text` (your own words, not copied), `src` and an `https://` `url`.
 3. Tap **Propose changes**, then **Create pull request**.
 
-A check runs on every pull request and tells you in plain words if something is off.
-
-## Rules for the data
+### Rules for the data
 
 - Every area needs at least one source link. No source, no pin.
 - Write what the source says. Do not guess depths or dates.
 - No names of private people and no home addresses.
 - Mark a location as approximate in `about` when the report is vague.
 
-## Change the code
+## Please keep these as they are
 
-The site has two parts. `index.html` is the engine and is the same for every city. `cities/<id>/city.json` holds everything local: map bounds, data sources, links and wording. The map library is in `vendor/`. There is no build step: open `index.html` through any local web server, e.g. `python3 -m http.server`, and edit.
-
-Please keep these as they are unless you discuss it in an issue first:
+Unless you discuss it in an issue first:
 
 - The wording that says this is a volunteer map and not an official warning system.
 - The moderation flow. Notes and photos must stay hidden until the automatic check approves them.
 - The clear visual split between official data, past-storm estimates and live reports.
+- Privacy: a person's own location stays in their browser.
 
-## City settings
+## Code structure
 
-`cities/sf/city.json` sets San Francisco's map bounds, weather point, tide station, open data sources (311 reports, storm drains, flood zone), links and the notes on reading the rain. Change a link or a note there, not in `index.html`.
-
-Other cities are on hold for now. The engine opens a city with `?city=<id>` and defaults to `sf`.
+`index.html` is the engine. `cities/sf/city.json` holds everything local: map bounds, data sources, links and wording, so change a link or a note there, not in `index.html`. The map library is in `vendor/`. San Francisco is the only city for now; other cities are on hold.
 
 ## Who can merge
 
-Maintainers listed in `MAINTAINERS.md` can review and merge. Any one maintainer's approval is enough. When a change lands on `main`, the site updates itself within a few minutes.
+Maintainers listed in `MAINTAINERS.md` can review and merge. Today that is Christine.
 
-Want to look after your own neighborhood? Open an issue saying so and an existing maintainer can add you.
+Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
